@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Image from "next/image";
-import { getTranslations } from "next-intl/server";
+import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { StoryTool } from "@/components/story-tool/StoryTool";
 import { FeaturedCarousel } from "@/components/story-tool/FeaturedCarousel";
@@ -30,6 +30,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function HomePage({ params }: Props) {
   const { locale } = await params;
+  setRequestLocale(locale);
   const t = await getTranslations({ locale, namespace: "HomePage" });
 
   const homeFaqs = Array.from({ length: 12 }, (_, i) => i + 1).map((n) => ({
