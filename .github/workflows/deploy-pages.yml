@@ -1,0 +1,68 @@
+# Frontend-only preview on GitHub Pages: https://spencerpennefather.github.io/anonlens/
+#
+# GitHub Pages serves static files only, so this build strips everything
+# that needs a server (API routes, admin dashboard, proxy, the dynamic
+# /profile/[username] page) before running a static export. Searches and
+# downloads won't work here — deploy to a Node host (see README) for that.
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - name: Strip server-only routes
+        run: rm -rf src/app/api src/app/admin src/proxy.ts "src/app/[locale]/profile"
+
+      - name: Static export
+        run: npx next build
+        env:
+          GITHUB_PAGES: "true"
+
+      - name: Add root redirect
+        run: |
+          cat > out/index.html <<'EOF'
+          <!doctype html>
+          <meta charset="utf-8">
+          <title>AnonLens</title>
+          <meta http-equiv="refresh" content="0; url=./en/">
+          <script>location.replace("./en/" + location.hash)</script>
+          <a href="./en/">Continue to AnonLens</a>
+          EOF
+          touch out/.nojekyll
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: out
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
