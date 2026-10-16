@@ -1,0 +1,234 @@
+"use client";
+
+import { useEffect, useRef, useState, useCallback } from "react";
+import { useTranslations } from "next-intl";
+import type { Profile } from "@/types/profile";
+import type { Story } from "@/types/story";
+import { DownloadButton } from "./DownloadButton";
+
+const SWIPE_CLOSE_THRESHOLD = 80;
+const SWIPE_NAV_THRESHOLD = 50;
+
+export function StoryViewerModal({
+  profile,
+  stories,
+  initialIndex,
+  onClose,
+}: {
+  profile: Pick<Profile, "username" | "profileImage">;
+  stories: Story[];
+  initialIndex: number;
+  onClose: () => void;
+}) {
+  const t = useTranslations("StoryTool");
+  const [index, setIndex] = useState(initialIndex);
+  const [paused, setPaused] = useState(false);
+  // Starts muted because browsers block unmuted autoplay without a prior
+  // user gesture (the story opens and starts playing on its own) — once the
+  // visitor taps to unmute, that choice carries over as they move between
+  // stories, same as Instagram's own viewer.
+  const [muted, setMuted] = useState(true);
+  const closeBtnRef = useRef<HTMLButtonElement>(null);
+  const touchStart = useRef<{ x: number; y: number } | null>(null);
+
+  const goNext = useCallback(() => {
+    setIndex((i) => {
+      if (i >= stories.length - 1) {
+        onClose();
+        return i;
+      }
+      return i + 1;
+    });
+  }, [stories.length, onClose]);
+
+  const goPrev = useCallback(() => {
+    setIndex((i) => Math.max(0, i - 1));
+  }, []);
+
+  useEffect(() => {
+    closeBtnRef.current?.focus();
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, []);
+
+  useEffect(() => {
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") onClose();
+      if (e.key === "ArrowRight") goNext();
+      if (e.key === "ArrowLeft") goPrev();
+    }
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [onClose, goNext, goPrev]);
+
+  useEffect(() => {
+    function onVisibilityChange() {
+      setPaused(document.hidden);
+    }
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    return () => document.removeEventListener("visibilitychange", onVisibilityChange);
+  }, []);
+
+  const current = stories[index];
+
+  useEffect(() => {
+    if (paused || current.type === "video") return;
+    // A non-positive duration would otherwise fire this instantly and
+    // close the viewer on open — fall back to Instagram's standard 5s.
+    const durationSeconds = current.duration > 0 ? current.duration : 5;
+    const timer = setTimeout(goNext, durationSeconds * 1000);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [index, paused, current.duration, current.type]);
+
+  function handleTouchStart(e: React.TouchEvent) {
+    const t = e.touches[0];
+    touchStart.current = { x: t.clientX, y: t.clientY };
+  }
+
+  function handleTouchEnd(e: React.TouchEvent) {
+    if (!touchStart.current) return;
+    const t = e.changedTouches[0];
+    const dx = t.clientX - touchStart.current.x;
+    const dy = t.clientY - touchStart.current.y;
+    touchStart.current = null;
+
+    if (dy > SWIPE_CLOSE_THRESHOLD && Math.abs(dy) > Math.abs(dx)) {
+      onClose();
+      return;
+    }
+    if (Math.abs(dx) > SWIPE_NAV_THRESHOLD && Math.abs(dx) > Math.abs(dy)) {
+      if (dx < 0) goNext();
+      else goPrev();
+    }
+  }
+
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label={t("storiesFromUser", { username: profile.username })}
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-0 sm:p-6"
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
+    >
+      <div className="relative flex h-full w-full max-w-md flex-col sm:h-[92vh] sm:rounded-2xl sm:overflow-hidden">
+        <div className="absolute inset-x-0 top-0 z-20 flex gap-1.5 p-3">
+          {stories.map((story, i) => (
+            <div
+              key={story.id}
+              className="h-1 flex-1 overflow-hidden rounded-full bg-white/30"
+            >
+              <div
+                className="h-full origin-left bg-white"
+                style={
+                  i === index
+                    ? {
+                        animation: `progress-fill ${story.duration}s linear forwards`,
+                        animationPlayState: paused ? "paused" : "running",
+                      }
+                    : { transform: `scaleX(${i < index ? 1 : 0})` }
+                }
+              />
+            </div>
+          ))}
+        </div>
+
+        <div className="absolute inset-x-0 top-6 z-20 flex items-center justify-between px-4 pt-3">
+          <div className="flex items-center gap-2">
+            <div className="h-8 w-8 overflow-hidden rounded-full brand-gradient p-[1.5px]">
+              <div className="h-full w-full overflow-hidden rounded-full bg-black">
+                {profile.profileImage && (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={profile.profileImage}
+                    alt=""
+                    className="h-full w-full object-cover"
+                  />
+                )}
+              </div>
+            </div>
+            <span className="text-sm font-semibold text-white">
+              @{profile.username}
+            </span>
+          </div>
+          <div className="flex items-center gap-1">
+            {current.type === "video" && (
+              <button
+                onClick={() => setMuted((m) => !m)}
+                aria-label={muted ? t("unmuteStory") : t("muteStory")}
+                className="flex h-11 w-11 items-center justify-center rounded-full text-white/90 hover:bg-white/10"
+              >
+                {muted ? (
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+                    <line x1="22" y1="9" x2="16" y2="15" />
+                    <line x1="16" y1="9" x2="22" y2="15" />
+                  </svg>
+                ) : (
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+                    <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
+                    <path d="M19.07 4.93a10 10 0 0 1 0 14.14" />
+                  </svg>
+                )}
+              </button>
+            )}
+            <DownloadButton
+              mediaUrl={current.mediaUrl}
+              label={t("downloadThisStory")}
+              className="flex h-11 w-11 items-center justify-center rounded-full text-white/90 hover:bg-white/10"
+            />
+            <button
+              ref={closeBtnRef}
+              onClick={onClose}
+              aria-label={t("closeStoryViewer")}
+              className="flex h-11 w-11 items-center justify-center rounded-full text-white/90 hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-white/60"
+            >
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                <path d="M18 6 6 18M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <div className="relative flex-1 select-none bg-black">
+          {current.type === "video" ? (
+            <video
+              key={current.id}
+              src={current.mediaUrl}
+              className="h-full w-full object-contain"
+              autoPlay
+              playsInline
+              muted={muted}
+              onEnded={goNext}
+            />
+          ) : (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              key={current.id}
+              src={current.mediaUrl}
+              alt={t("storyFromUser", { username: profile.username })}
+              className="h-full w-full object-contain"
+            />
+          )}
+
+          <button
+            aria-label={t("previousStory")}
+            onClick={goPrev}
+            onMouseDown={(e) => e.preventDefault()}
+            className="absolute left-0 top-0 h-full w-1/3 cursor-default"
+          />
+          <button
+            aria-label={t("nextStory")}
+            onClick={goNext}
+            onMouseDown={(e) => e.preventDefault()}
+            className="absolute right-0 top-0 h-full w-2/3 cursor-default"
+          />
+        </div>
+      </div>
+    </div>
+  );
+}

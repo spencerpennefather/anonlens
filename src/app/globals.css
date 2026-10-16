@@ -1,0 +1,243 @@
+@import "tailwindcss";
+
+:root {
+  --background: #fafafa;
+  --foreground: #1a1217;
+  --surface: #ffffff;
+  --surface-muted: #f8f2f5;
+  --border: #eee3e8;
+  --brand-start: #d92876;
+  --brand-mid: #d33026;
+  --brand-end: #76f916;
+  --accent: #ed3a8d;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-surface: var(--surface);
+  --color-surface-muted: var(--surface-muted);
+  --color-border: var(--border);
+  --color-brand-start: var(--brand-start);
+  --color-brand-mid: var(--brand-mid);
+  --color-brand-end: var(--brand-end);
+  --color-accent: var(--accent);
+  --font-sans: var(--font-inter);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --background: #100a0d;
+    --foreground: #f8f2f5;
+    --surface: #1d1318;
+    --surface-muted: #261820;
+    --border: #35242c;
+  }
+}
+
+:root[data-theme="dark"] {
+  --background: #100a0d;
+  --foreground: #f8f2f5;
+  --surface: #1d1318;
+  --surface-muted: #261820;
+  --border: #35242c;
+}
+
+.logo-dark {
+  display: none;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .logo-light {
+    display: none;
+  }
+  :root:not([data-theme="light"]) .logo-dark {
+    display: block;
+  }
+}
+
+:root[data-theme="dark"] .logo-light {
+  display: none;
+}
+
+:root[data-theme="dark"] .logo-dark {
+  display: block;
+}
+
+html,
+body,
+main {
+  max-width: 100%;
+  /* `clip`, not `hidden` — setting overflow-x alone to `hidden` makes
+     browsers silently upgrade the unset overflow-y to `auto`, which then
+     clips vertical overflow too (e.g. decorative elements meant to bleed
+     upward behind the sticky header). `clip` restricts only this axis. */
+  overflow-x: clip;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+}
+
+img,
+video,
+iframe,
+canvas,
+svg {
+  max-width: 100%;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* CSS-only 3D cube — used as the loading indicator while a search result
+   is generating. Pure transforms, no canvas/WebGL, so it costs nothing
+   extra to ship. */
+.loader-cube-scene {
+  perspective: 300px;
+}
+.loader-cube {
+  position: relative;
+  width: 28px;
+  height: 28px;
+  transform-style: preserve-3d;
+  animation: loader-cube-spin 1.8s linear infinite;
+}
+.loader-cube__face {
+  position: absolute;
+  inset: 0;
+  border-radius: 6px;
+  opacity: 0.92;
+}
+.loader-cube__face--front {
+  transform: translateZ(14px);
+  background: linear-gradient(135deg, var(--brand-start), var(--brand-mid));
+}
+.loader-cube__face--back {
+  transform: rotateY(180deg) translateZ(14px);
+  background: linear-gradient(135deg, var(--brand-mid), var(--brand-end));
+}
+.loader-cube__face--right {
+  transform: rotateY(90deg) translateZ(14px);
+  background: linear-gradient(135deg, var(--brand-start), var(--brand-end));
+}
+.loader-cube__face--left {
+  transform: rotateY(-90deg) translateZ(14px);
+  background: linear-gradient(135deg, var(--brand-end), var(--brand-mid));
+}
+.loader-cube__face--top {
+  transform: rotateX(90deg) translateZ(14px);
+  background: linear-gradient(135deg, var(--brand-mid), var(--brand-start));
+}
+.loader-cube__face--bottom {
+  transform: rotateX(-90deg) translateZ(14px);
+  background: linear-gradient(135deg, var(--brand-end), var(--brand-start));
+}
+
+@keyframes loader-cube-spin {
+  0% {
+    transform: rotateX(-25deg) rotateY(0deg);
+  }
+  100% {
+    transform: rotateX(-25deg) rotateY(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .loader-cube {
+    animation: none;
+    transform: rotateX(-25deg) rotateY(35deg);
+  }
+}
+
+/* Offsets same-page anchor scrolling (nav → #about / #contact) so the
+   sticky header never covers the top of the target section. */
+[id] {
+  scroll-margin-top: 5rem;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--accent) 30%, transparent);
+  color: var(--foreground);
+}
+
+.brand-gradient {
+  background-image: linear-gradient(
+    135deg,
+    var(--brand-start),
+    var(--brand-mid),
+    var(--brand-end)
+  );
+}
+
+.brand-gradient-text {
+  background-image: linear-gradient(
+    135deg,
+    var(--brand-start),
+    var(--brand-mid),
+    var(--brand-end)
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+@keyframes progress-fill {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+@keyframes skeleton-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.animate-skeleton {
+  animation: skeleton-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    /* Track is the item list rendered twice back-to-back, so -50% is
+       exactly one full set — the loop point is invisible. */
+    transform: translateX(-50%);
+  }
+}
+
+.animate-marquee {
+  /* Longer than 40s to keep scroll speed steady now that the cards are
+     bigger — a wider track at the same duration would scroll faster. */
+  animation: marquee 52s linear infinite;
+}
+
+.animate-marquee:hover {
+  animation-play-state: paused;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-marquee {
+    animation: none;
+  }
+}

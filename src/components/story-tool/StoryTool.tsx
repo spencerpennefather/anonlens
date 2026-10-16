@@ -1,0 +1,575 @@
+"use client";
+
+import { useCallback, useEffect, useRef, useState, type FormEvent, type RefObject } from "react";
+import Image from "next/image";
+import { useTranslations } from "next-intl";
+import { Link } from "@/i18n/navigation";
+import { validateUsername } from "@/lib/story/validation";
+import { extractPostShortcode, extractHighlightUrl } from "@/lib/story/post-url";
+import { errorMessageKey } from "@/lib/story/error-messages";
+import type { StoryLookupResult } from "@/types/story";
+import type { PostLookupResult } from "@/types/post";
+import type { HighlightItemsLookupResult } from "@/types/highlight";
+import type { Profile } from "@/types/profile";
+import { StoryViewerModal } from "./StoryViewerModal";
+import { PostsGrid } from "./PostsGrid";
+import { HighlightsGrid } from "./HighlightsGrid";
+import { ProfilePictureTab } from "./ProfilePictureTab";
+import { DownloadButton } from "./DownloadButton";
+import { Turnstile, type TurnstileHandle } from "./Turnstile";
+import { SinglePostResult } from "./SinglePostResult";
+import { SingleHighlightResult } from "./SingleHighlightResult";
+
+type Status = "idle" | "loading" | "result";
+type Tab = "stories" | "posts" | "reels" | "highlights" | "profile";
+type LoadingPhase = "verifying" | "searching";
+
+const TURNSTILE_ENABLED = Boolean(process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY);
+const MIN_LOADING_MS = 900; // avoids a jarring instant flash on a fast response
+
+async function waitOutMinLoading(startedAt: number) {
+  const elapsed = Date.now() - startedAt;
+  if (elapsed < MIN_LOADING_MS) {
+    await new Promise((r) => setTimeout(r, MIN_LOADING_MS - elapsed));
+  }
+}
+
+/** Dispatched by anything outside this component (e.g. the featured-accounts carousel) that wants to trigger a search. */
+export const SEARCH_USERNAME_EVENT = "iv:search-username";
+
+export function StoryTool({
+  variant = "hero",
+}: {
+  variant?: "hero" | "compact";
+}) {
+  const t = useTranslations("StoryTool");
+  const [input, setInput] = useState("");
+  const [status, setStatus] = useState<Status>("idle");
+  const [loadingPhase, setLoadingPhase] = useState<LoadingPhase>("verifying");
+  const [result, setResult] = useState<StoryLookupResult | null>(null);
+  const [postResult, setPostResult] = useState<PostLookupResult | null>(null);
+  const [highlightResult, setHighlightResult] = useState<HighlightItemsLookupResult | null>(null);
+  const [formError, setFormError] = useState<string | null>(null);
+  const [viewerIndex, setViewerIndex] = useState<number | null>(null);
+  const [tab, setTab] = useState<Tab>("stories");
+  const turnstileRef = useRef<TurnstileHandle>(null);
+  const resultsRef = useRef<HTMLDivElement>(null);
+
+  // Scrolls the results section into view as soon as a search starts
+  // loading, rather than leaving the page at whatever scroll position it
+  // was at (or letting it jump to the very top) once results render in.
+  useEffect(() => {
+    if (status === "loading") {
+      resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }, [status]);
+
+  const runSearch = useCallback(async (searchInput: string) => {
+    setFormError(null);
+
+    const highlightUrl = extractHighlightUrl(searchInput);
+    const shortcode = highlightUrl ? null : extractPostShortcode(searchInput);
+
+    if (!highlightUrl && !shortcode) {
+      const { valid } = validateUsername(searchInput);
+      if (!valid) {
+        setFormError(t("validationFallback"));
+        return;
+      }
+    }
+
+    // Show the loading state immediately — verification and the actual
+    // lookup both happen while it's visible, so the user isn't staring at
+    // an unchanged form during either real step.
+    const startedAt = Date.now();
+    setStatus("loading");
+    setLoadingPhase("verifying");
+    setResult(null);
+    setPostResult(null);
+    setHighlightResult(null);
+    setTab("stories");
+
+    try {
+      const turnstileToken = TURNSTILE_ENABLED ? await turnstileRef.current?.getToken() : null;
+      setLoadingPhase("searching");
+
+      if (highlightUrl) {
+        const res = await fetch("/api/highlight-viewer/", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ url: highlightUrl, turnstileToken }),
+        });
+        const data: HighlightItemsLookupResult = await res.json();
+        await waitOutMinLoading(startedAt);
+        setHighlightResult(data);
+      } else if (shortcode) {
+        const res = await fetch("/api/post-viewer/", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ url: searchInput, turnstileToken }),
+        });
+        const data: PostLookupResult = await res.json();
+        await waitOutMinLoading(startedAt);
+        setPostResult(data);
+      } else {
+        const { normalized } = validateUsername(searchInput);
+        const res = await fetch("/api/story-viewer/", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ username: normalized, turnstileToken }),
+        });
+        const data: StoryLookupResult = await res.json();
+        await waitOutMinLoading(startedAt);
+        setResult(data);
+      }
+    } catch {
+      await waitOutMinLoading(startedAt);
+      const errorResult = {
+        status: "error" as const,
+        code: "UPSTREAM_ERROR" as const,
+        message: "",
+      };
+      if (highlightUrl) {
+        setHighlightResult(errorResult);
+      } else if (shortcode) {
+        setPostResult(errorResult);
+      } else {
+        setResult(errorResult);
+      }
+    }
+
+    setStatus("result");
+  }, [t]);
+
+  function handleSubmit(e: FormEvent) {
+    e.preventDefault();
+    runSearch(input);
+  }
+
+  useEffect(() => {
+    function onExternalSearch(e: Event) {
+      const username = (e as CustomEvent<string>).detail;
+      if (typeof username !== "string") return;
+      setInput(username);
+      runSearch(username);
+    }
+    window.addEventListener(SEARCH_USERNAME_EVENT, onExternalSearch);
+    return () => window.removeEventListener(SEARCH_USERNAME_EVENT, onExternalSearch);
+  }, [runSearch]);
+
+  function reset() {
+    setStatus("idle");
+    setResult(null);
+    setPostResult(null);
+    setHighlightResult(null);
+    setInput("");
+    setFormError(null);
+    setTab("stories");
+  }
+
+  return (
+    <div className="w-full">
+      <form
+        onSubmit={handleSubmit}
+        className="flex flex-col gap-3 sm:flex-row"
+        aria-label={t("searchAriaLabel")}
+      >
+        <div className="relative flex-1">
+          <input
+            type="text"
+            inputMode="text"
+            autoCapitalize="off"
+            autoCorrect="off"
+            spellCheck={false}
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            placeholder={t("inputPlaceholder")}
+            aria-label={t("inputAriaLabel")}
+            className="w-full rounded-2xl border border-border bg-surface px-5 py-4 text-base text-foreground shadow-sm outline-none ring-accent/30 transition focus:ring-4"
+          />
+        </div>
+        <button
+          type="submit"
+          disabled={status === "loading"}
+          className="brand-gradient shrink-0 rounded-2xl px-8 py-4 text-base font-semibold text-white shadow-md transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-70"
+        >
+          {status === "loading" ? t("searching") : t("viewStories")}
+        </button>
+      </form>
+
+      {TURNSTILE_ENABLED && <Turnstile ref={turnstileRef} />}
+
+      {formError && (
+        <p role="alert" className="mt-2 text-sm font-medium text-red-600">
+          {formError}
+        </p>
+      )}
+
+      <p className="mt-3 text-xs text-foreground/50">{t("disclaimer")}</p>
+
+      <div ref={resultsRef} className="mt-6 scroll-mt-24">
+        {status === "loading" && <LoadingState phase={loadingPhase} />}
+        {status === "result" && result && (
+          <ResultState
+            result={result}
+            variant={variant}
+            tab={tab}
+            onTabChange={setTab}
+            onReset={reset}
+            onOpenViewer={(index) => setViewerIndex(index)}
+            turnstileRef={turnstileRef}
+          />
+        )}
+        {status === "result" && postResult && (
+          <SinglePostResult result={postResult} onReset={reset} />
+        )}
+        {status === "result" && highlightResult && (
+          <SingleHighlightResult result={highlightResult} onReset={reset} />
+        )}
+      </div>
+
+      {result?.status === "ok" && viewerIndex !== null && (
+        <StoryViewerModal
+          profile={result.profile}
+          stories={result.profile.stories}
+          initialIndex={viewerIndex}
+          onClose={() => setViewerIndex(null)}
+        />
+      )}
+    </div>
+  );
+}
+
+function LoadingState({ phase }: { phase: LoadingPhase }) {
+  const t = useTranslations("StoryTool");
+  return (
+    <div
+      role="status"
+      aria-live="polite"
+      className="rounded-2xl border border-border bg-surface p-6"
+    >
+      <div className="flex items-center gap-3">
+        <div aria-hidden className="loader-cube-scene shrink-0">
+          <div className="loader-cube">
+            <div className="loader-cube__face loader-cube__face--front" />
+            <div className="loader-cube__face loader-cube__face--back" />
+            <div className="loader-cube__face loader-cube__face--right" />
+            <div className="loader-cube__face loader-cube__face--left" />
+            <div className="loader-cube__face loader-cube__face--top" />
+            <div className="loader-cube__face loader-cube__face--bottom" />
+          </div>
+        </div>
+        <p className="text-sm font-medium text-foreground/70">
+          {phase === "verifying" ? t("loadingVerifying") : t("loadingSearching")}
+        </p>
+      </div>
+      <div className="mt-4 flex items-center gap-3">
+        <div className="animate-skeleton h-14 w-14 shrink-0 rounded-full bg-surface-muted" />
+        <div className="flex-1 space-y-2">
+          <div className="animate-skeleton h-3 w-1/3 rounded bg-surface-muted" />
+          <div className="animate-skeleton h-3 w-1/4 rounded bg-surface-muted" />
+        </div>
+      </div>
+      <div className="mt-5 flex gap-3">
+        {[0, 1, 2, 3].map((i) => (
+          <div
+            key={i}
+            className="animate-skeleton h-24 w-16 shrink-0 rounded-xl bg-surface-muted sm:h-32 sm:w-20"
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function ResultState({
+  result,
+  variant,
+  tab,
+  onTabChange,
+  onReset,
+  onOpenViewer,
+  turnstileRef,
+}: {
+  result: StoryLookupResult;
+  variant: "hero" | "compact";
+  tab: Tab;
+  onTabChange: (tab: Tab) => void;
+  onReset: () => void;
+  onOpenViewer: (index: number) => void;
+  turnstileRef: RefObject<TurnstileHandle | null>;
+}) {
+  const t = useTranslations("StoryTool");
+
+  if (result.status === "error") {
+    return (
+      <StateCard tone="error" onReset={onReset}>
+        {t(errorMessageKey(result.code))}
+      </StateCard>
+    );
+  }
+
+  if (result.status === "not_found") {
+    return (
+      <StateCard tone="neutral" onReset={onReset}>
+        {t("notFoundProfile")}
+      </StateCard>
+    );
+  }
+
+  if (result.status === "private") {
+    return (
+      <StateCard tone="neutral" onReset={onReset} profile={result.profile}>
+        {t("privateProfile")}
+      </StateCard>
+    );
+  }
+
+  // status === "ok" or "no_stories" — a confirmed public profile either way
+  const profile = result.profile;
+
+  return (
+    <div className="rounded-2xl border border-border bg-surface p-5 sm:p-6">
+      <div className="flex justify-end">
+        <button
+          onClick={onReset}
+          className="shrink-0 text-sm font-medium text-foreground/50 hover:text-foreground"
+        >
+          {t("searchAnother")}
+        </button>
+      </div>
+
+      <ProfileHeader profile={profile} />
+
+      <div className="no-scrollbar mt-5 flex gap-2 overflow-x-auto border-b border-border">
+        <TabButton active={tab === "stories"} onClick={() => onTabChange("stories")}>
+          {t("tabStories")} {result.status === "ok" ? `(${profile.stories.length})` : ""}
+        </TabButton>
+        <TabButton active={tab === "posts"} onClick={() => onTabChange("posts")}>
+          {t("tabPosts")}
+        </TabButton>
+        <TabButton active={tab === "reels"} onClick={() => onTabChange("reels")}>
+          {t("tabReels")}
+        </TabButton>
+        <TabButton active={tab === "highlights"} onClick={() => onTabChange("highlights")}>
+          {t("tabHighlights")}
+        </TabButton>
+        <TabButton active={tab === "profile"} onClick={() => onTabChange("profile")}>
+          {t("tabProfilePicture")}
+        </TabButton>
+      </div>
+
+      {tab === "stories" ? (
+        result.status === "no_stories" ? (
+          <p className="mt-5 text-sm text-foreground/60">
+            {t("noStoriesFound")}{" "}
+            <Link
+              href={`/profile/${profile.username}/`}
+              className="font-semibold text-accent hover:underline"
+            >
+              {t("viewPublicProfileInfo")}
+            </Link>
+            .
+          </p>
+        ) : (
+          <div
+            className={`mt-5 grid gap-3 ${
+              variant === "hero"
+                ? "grid-cols-3 sm:grid-cols-4 md:grid-cols-6"
+                : "grid-cols-4 sm:grid-cols-6"
+            }`}
+          >
+            {profile.stories.map((story, index) => (
+              <div
+                key={story.id}
+                className="group relative aspect-[9/16] overflow-hidden rounded-xl border border-border bg-surface-muted"
+              >
+                <button
+                  onClick={() => onOpenViewer(index)}
+                  className="absolute inset-0 h-full w-full"
+                  aria-label={t("openStory", { index: index + 1 })}
+                >
+                  {story.thumbnailUrl && (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={story.thumbnailUrl}
+                      alt=""
+                      className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                    />
+                  )}
+                  <span className="absolute inset-0 bg-black/0 transition-colors group-hover:bg-black/10" />
+                </button>
+                {/* Sibling, not nested inside the button above — an <a> inside a <button> is invalid HTML and misfires clicks. */}
+                <DownloadButton
+                  mediaUrl={story.mediaUrl}
+                  label={t("downloadStory", { index: index + 1 })}
+                  className="absolute bottom-1.5 right-1.5 rounded-full bg-black/50 p-1.5 text-white opacity-0 transition-opacity hover:bg-black/70 group-hover:opacity-100"
+                />
+              </div>
+            ))}
+          </div>
+        )
+      ) : tab === "posts" ? (
+        <PostsGrid username={profile.username} filter="posts" />
+      ) : tab === "reels" ? (
+        <PostsGrid username={profile.username} filter="reels" />
+      ) : tab === "highlights" ? (
+        <HighlightsGrid username={profile.username} turnstileRef={turnstileRef} />
+      ) : (
+        <ProfilePictureTab profile={profile} />
+      )}
+    </div>
+  );
+}
+
+function TabButton({
+  active,
+  onClick,
+  children,
+}: {
+  active: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className={`-mb-px shrink-0 whitespace-nowrap border-b-2 px-3 py-2 text-sm font-semibold transition-colors ${
+        active
+          ? "border-accent text-foreground"
+          : "border-transparent text-foreground/50 hover:text-foreground"
+      }`}
+    >
+      {children}
+    </button>
+  );
+}
+
+function ProfileHeader({ profile }: { profile: Profile }) {
+  const t = useTranslations("StoryTool");
+  return (
+    <div>
+      <div className="flex items-start gap-4 sm:gap-6">
+        <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-full brand-gradient p-[3px] sm:h-24 sm:w-24">
+          <div className="h-full w-full overflow-hidden rounded-full bg-surface p-[2px]">
+            {profile.profileImage ? (
+              <Image
+                src={profile.profileImage}
+                alt={profile.username}
+                width={96}
+                height={96}
+                className="h-full w-full rounded-full object-cover"
+                unoptimized
+              />
+            ) : (
+              <div className="flex h-full w-full items-center justify-center rounded-full text-lg font-semibold text-foreground/40">
+                {profile.username.slice(0, 2).toUpperCase()}
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className="min-w-0 flex-1 pt-1">
+          <div className="flex items-center gap-1.5">
+            <p className="truncate text-lg font-bold text-foreground sm:text-xl">
+              {profile.fullName ?? `@${profile.username}`}
+            </p>
+            {profile.isVerified && (
+              <svg aria-label="Verified" width="17" height="17" viewBox="0 0 24 24" fill="currentColor" className="shrink-0 text-accent">
+                <path d="M12 2l2.4 2.1 3.1-.5 1 3 2.8 1.5-.5 3.1L23 14l-2.2 2.4.5 3.1-2.8 1.5-1 3-3.1-.5L12 26l-2.4-2.1-3.1.5-1-3-2.8-1.5.5-3.1L1 14l2.2-2.4-.5-3.1 2.8-1.5 1-3 3.1.5z" />
+              </svg>
+            )}
+          </div>
+          <p className="text-sm text-foreground/50">@{profile.username}</p>
+
+          <div className="mt-3 flex gap-5 sm:gap-8">
+            <Stat count={profile.posts} label={t("statPosts")} />
+            <Stat count={profile.followers} label={t("statFollowers")} />
+            <Stat count={profile.following} label={t("statFollowing")} />
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-4">
+        {profile.category && (
+          <p className="text-sm text-foreground/50">{profile.category}</p>
+        )}
+        {profile.bio && (
+          <p className="mt-1 whitespace-pre-line break-words text-base leading-relaxed text-foreground/80">
+            {profile.bio}
+          </p>
+        )}
+        {profile.externalUrl && (
+          <a
+            href={profile.externalUrl}
+            target="_blank"
+            rel="nofollow noopener noreferrer"
+            className="mt-1 inline-flex max-w-full items-start gap-1 text-base font-medium text-accent hover:underline"
+          >
+            <svg aria-hidden width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mt-1 shrink-0">
+              <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+              <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+            </svg>
+            <span className="min-w-0 break-all">{formatUrlForDisplay(profile.externalUrl)}</span>
+          </a>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function Stat({ count, label }: { count: number | null; label: string }) {
+  if (typeof count !== "number") return null;
+  return (
+    <div>
+      <p className="text-base font-bold text-foreground sm:text-lg">{formatCount(count)}</p>
+      <p className="text-sm text-foreground/50">{label}</p>
+    </div>
+  );
+}
+
+function formatUrlForDisplay(url: string): string {
+  return url.replace(/^https?:\/\//, "").replace(/\/$/, "");
+}
+
+function formatCount(n: number): string {
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1).replace(/\.0$/, "")}M`;
+  if (n >= 1_000) return `${(n / 1_000).toFixed(1).replace(/\.0$/, "")}K`;
+  return n.toLocaleString();
+}
+
+function StateCard({
+  tone,
+  children,
+  onReset,
+  profile,
+}: {
+  tone: "neutral" | "error";
+  children: React.ReactNode;
+  onReset: () => void;
+  profile?: Profile;
+}) {
+  const t = useTranslations("StoryTool");
+  return (
+    <div
+      className={`rounded-2xl border p-6 ${
+        tone === "error"
+          ? "border-red-200 bg-red-50 dark:border-red-900/40 dark:bg-red-950/30"
+          : "border-border bg-surface"
+      }`}
+    >
+      {profile && (
+        <div className="mb-4">
+          <ProfileHeader profile={profile} />
+        </div>
+      )}
+      <p className="text-sm leading-relaxed text-foreground/75">{children}</p>
+      <button
+        onClick={onReset}
+        className="mt-4 text-sm font-semibold text-accent hover:underline"
+      >
+        {t("searchAnotherUsername")}
+      </button>
+    </div>
+  );
+}

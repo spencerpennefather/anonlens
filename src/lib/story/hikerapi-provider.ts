@@ -1,0 +1,438 @@
+import type { StoryProvider } from "./provider";
+import { ProviderError } from "./provider";
+import type { Profile } from "@/types/profile";
+import type { Story } from "@/types/story";
+import type { Post, PostMediaItem } from "@/types/post";
+import type { HighlightMeta } from "@/types/highlight";
+import { validateUsername } from "./validation";
+import { checkOutboundRateLimit } from "./rate-limit";
+import { getAllHikerApiKeys } from "./key-store";
+
+const HIKERAPI_BASE = "https://api.hikerapi.com";
+const FETCH_TIMEOUT_MS = 15_000;
+
+interface HikerUser {
+  pk: number | string;
+  username: string;
+  full_name: string | null;
+  biography: string | null;
+  profile_pic_url: string | null;
+  /** Present on /v2/user/by/username; absent (or null) elsewhere. */
+  hd_profile_pic_url_info?: { url: string } | null;
+  follower_count: number | null;
+  following_count: number | null;
+  media_count: number | null;
+  is_private: boolean;
+  is_verified: boolean;
+  category?: string | null;
+  external_url?: string | null;
+}
+
+interface HikerStoryItem {
+  id?: string;
+  pk?: number | string;
+  taken_at: number;
+  video_versions?: { url: string }[];
+  image_versions2?: { candidates?: { url: string }[] };
+  video_duration?: number;
+}
+
+interface HikerStoriesResponse {
+  reel: { items?: HikerStoryItem[] } | null;
+  status: string;
+}
+
+interface HikerMediaResource {
+  media_type: number; // 1 = photo, 2 = video
+  thumbnail_url?: string | null;
+  video_url?: string | null;
+  image_versions?: { url: string }[];
+  video_versions?: { url: string }[];
+}
+
+interface HikerMediaItem extends HikerMediaResource {
+  pk: string | number;
+  id: string;
+  code?: string | null;
+  // The medias/chunk endpoint's `taken_at` is already an ISO string —
+  // `taken_at_ts` is the parallel unix-seconds field, unlike the stories
+  // endpoint where `taken_at` itself is numeric.
+  taken_at: string;
+  taken_at_ts?: number;
+  caption_text?: string | null;
+  like_count?: number | null;
+  comment_count?: number | null;
+  resources?: HikerMediaResource[];
+  /** "clips" for a Reel; other values (or absent) for a regular feed post. */
+  product_type?: string | null;
+}
+
+interface HikerHighlightCoverMedia {
+  cropped_image_version?: { url?: string } | null;
+}
+
+interface HikerHighlightMeta {
+  pk?: string | number;
+  id?: string;
+  title: string;
+  media_count?: number | null;
+  cover_media?: HikerHighlightCoverMedia | null;
+}
+
+interface HikerHighlightItem {
+  pk?: string | number;
+  id?: string;
+  // Unlike the stories endpoint (numeric unix seconds), /v1/highlight/by/url
+  // returns this as an ISO datetime string — verified against a live
+  // response, not just the docs summary.
+  taken_at: string;
+  media_type: number; // 1 = photo, 2 = video
+  thumbnail_url?: string | null;
+  video_url?: string | null;
+  video_duration?: number;
+}
+
+interface HikerHighlightDetail {
+  title?: string;
+  cover_media?: HikerHighlightCoverMedia | null;
+  items?: HikerHighlightItem[];
+}
+
+/**
+ * Story provider backed by HikerAPI (hikerapi.com) — a licensed data
+ * vendor that maintains its own authenticated Instagram session
+ * server-side. Unlike `PublicWebStoryProvider`, this can actually return
+ * Story media, because the request never touches Instagram directly: we
+ * pay for an API call, HikerAPI owns the session and the account risk.
+ */
+export class HikerApiStoryProvider implements StoryProvider {
+  async getProfile(usernameInput: string): Promise<Profile | null> {
+    const user = await this.resolveUser(usernameInput);
+    if (!user) return null;
+
+    const isPublic = user.is_private === false;
+    const stories = isPublic ? await this.fetchStories(user.pk) : [];
+    return this.buildProfile(user, stories);
+  }
+
+  async getBasicProfile(usernameInput: string): Promise<Profile | null> {
+    const user = await this.resolveUser(usernameInput);
+    if (!user) return null;
+    return this.buildProfile(user, []);
+  }
+
+  private async resolveUser(usernameInput: string): Promise<HikerUser | null> {
+    const { valid, normalized } = validateUsername(usernameInput);
+    if (!valid) {
+      throw new ProviderError("Invalid username.", "UPSTREAM_ERROR");
+    }
+
+    if (!checkOutboundRateLimit().allowed) {
+      throw new ProviderError(
+        "Upstream request budget exceeded for this window.",
+        "RATE_LIMITED",
+      );
+    }
+
+    if ((await getAllHikerApiKeys()).length === 0) {
+      throw new ProviderError("HIKERAPI_KEY is not configured.", "UPSTREAM_ERROR");
+    }
+
+    return this.fetchUser(normalized);
+  }
+
+  private buildProfile(user: HikerUser, stories: Story[]): Profile {
+    return {
+      username: user.username,
+      profileImage: user.profile_pic_url,
+      profileImageHd: user.hd_profile_pic_url_info?.url ?? user.profile_pic_url,
+      fullName: user.full_name,
+      bio: user.biography,
+      followers: user.follower_count,
+      following: user.following_count,
+      posts: user.media_count,
+      isVerified: user.is_verified,
+      isPublic: user.is_private === false,
+      stories,
+      category: user.category || null,
+      externalUrl: user.external_url || null,
+    };
+  }
+
+  async getPosts(usernameInput: string): Promise<Post[]> {
+    const { valid, normalized } = validateUsername(usernameInput);
+    if (!valid) {
+      throw new ProviderError("Invalid username.", "UPSTREAM_ERROR");
+    }
+
+    if (!checkOutboundRateLimit().allowed) {
+      throw new ProviderError(
+        "Upstream request budget exceeded for this window.",
+        "RATE_LIMITED",
+      );
+    }
+
+    if ((await getAllHikerApiKeys()).length === 0) {
+      throw new ProviderError("HIKERAPI_KEY is not configured.", "UPSTREAM_ERROR");
+    }
+
+    const user = await this.fetchUser(normalized);
+    if (!user || user.is_private !== false) return [];
+
+    const res = await this.request(`/v1/user/medias/chunk?user_id=${encodeURIComponent(String(user.pk))}`);
+    if (!res.ok) return [];
+
+    const body = (await res.json()) as [HikerMediaItem[], string | null] | HikerMediaItem[];
+    const items = Array.isArray(body[0]) ? (body[0] as HikerMediaItem[]) : (body as HikerMediaItem[]);
+
+    return items
+      .map((item) => this.normalizeMediaPost(item))
+      .filter((post): post is Post => post !== null);
+  }
+
+  async getPostByShortcode(shortcode: string): Promise<Post | null> {
+    if (!/^[A-Za-z0-9_-]{2,20}$/.test(shortcode)) {
+      throw new ProviderError("Invalid post URL.", "UPSTREAM_ERROR");
+    }
+
+    if (!checkOutboundRateLimit().allowed) {
+      throw new ProviderError(
+        "Upstream request budget exceeded for this window.",
+        "RATE_LIMITED",
+      );
+    }
+
+    if ((await getAllHikerApiKeys()).length === 0) {
+      throw new ProviderError("HIKERAPI_KEY is not configured.", "UPSTREAM_ERROR");
+    }
+
+    const res = await this.request(`/v1/media/by/code?code=${encodeURIComponent(shortcode)}`);
+    if (res.status === 404) return null;
+
+    const item = (await res.json()) as HikerMediaItem;
+    return this.normalizeMediaPost(item);
+  }
+
+  async getHighlights(usernameInput: string): Promise<HighlightMeta[]> {
+    const { valid, normalized } = validateUsername(usernameInput);
+    if (!valid) {
+      throw new ProviderError("Invalid username.", "UPSTREAM_ERROR");
+    }
+
+    if (!checkOutboundRateLimit().allowed) {
+      throw new ProviderError(
+        "Upstream request budget exceeded for this window.",
+        "RATE_LIMITED",
+      );
+    }
+
+    if ((await getAllHikerApiKeys()).length === 0) {
+      throw new ProviderError("HIKERAPI_KEY is not configured.", "UPSTREAM_ERROR");
+    }
+
+    const user = await this.fetchUser(normalized);
+    if (!user || user.is_private !== false) return [];
+
+    const res = await this.request(`/v1/user/highlights?user_id=${encodeURIComponent(String(user.pk))}`);
+    if (!res.ok) return [];
+
+    const body = (await res.json()) as HikerHighlightMeta[];
+    if (!Array.isArray(body)) return [];
+
+    return body.map((h) => this.normalizeHighlightMeta(h));
+  }
+
+  async getHighlightItems(
+    highlightUrl: string,
+  ): Promise<{ title: string; coverImageUrl: string | null; items: Story[] } | null> {
+    if (!/^https:\/\/(www\.)?instagram\.com\/stories\/highlights\/\d+\/?$/i.test(highlightUrl)) {
+      throw new ProviderError("Invalid highlight URL.", "UPSTREAM_ERROR");
+    }
+
+    if (!checkOutboundRateLimit().allowed) {
+      throw new ProviderError(
+        "Upstream request budget exceeded for this window.",
+        "RATE_LIMITED",
+      );
+    }
+
+    if ((await getAllHikerApiKeys()).length === 0) {
+      throw new ProviderError("HIKERAPI_KEY is not configured.", "UPSTREAM_ERROR");
+    }
+
+    const res = await this.request(`/v1/highlight/by/url?url=${encodeURIComponent(highlightUrl)}`);
+    if (res.status === 404) return null;
+
+    const detail = (await res.json()) as HikerHighlightDetail;
+    const items = (detail.items ?? [])
+      .map((item) => this.normalizeHighlightItem(item))
+      .filter((story): story is Story => story !== null);
+
+    return {
+      title: detail.title ?? "",
+      coverImageUrl: detail.cover_media?.cropped_image_version?.url ?? null,
+      items,
+    };
+  }
+
+  private normalizeHighlightMeta(h: HikerHighlightMeta): HighlightMeta {
+    return {
+      id: String(h.pk ?? h.id),
+      title: h.title,
+      coverImageUrl: h.cover_media?.cropped_image_version?.url ?? null,
+      mediaCount: h.media_count ?? null,
+    };
+  }
+
+  private normalizeHighlightItem(item: HikerHighlightItem): Story | null {
+    const mediaUrl = item.video_url ?? item.thumbnail_url;
+    if (!mediaUrl) return null;
+
+    return {
+      id: String(item.pk ?? item.id ?? item.taken_at),
+      type: item.media_type === 2 ? "video" : "image",
+      mediaUrl,
+      thumbnailUrl: item.thumbnail_url ?? null,
+      timestamp: item.taken_at || null,
+      duration: item.video_duration ?? 5,
+    };
+  }
+
+  private normalizeMediaPost(item: HikerMediaItem): Post | null {
+    const ownItem = this.normalizeMediaItem(item);
+    const childItems = item.resources?.map((r) => this.normalizeMediaItem(r)).filter((m): m is PostMediaItem => m !== null) ?? [];
+    const mediaItems = childItems.length > 0 ? childItems : ownItem ? [ownItem] : [];
+    if (mediaItems.length === 0) return null;
+
+    return {
+      id: String(item.pk ?? item.id),
+      shortcode: item.code ?? null,
+      caption: item.caption_text ?? null,
+      timestamp: item.taken_at_ts
+        ? new Date(item.taken_at_ts * 1000).toISOString()
+        : item.taken_at || null,
+      likeCount: item.like_count ?? null,
+      commentCount: item.comment_count ?? null,
+      items: mediaItems,
+      isReel: item.product_type === "clips",
+    };
+  }
+
+  private normalizeMediaItem(item: HikerMediaResource): PostMediaItem | null {
+    const videoUrl = item.video_url ?? item.video_versions?.[0]?.url;
+    const imageUrl = item.thumbnail_url ?? item.image_versions?.[0]?.url;
+    const mediaUrl = videoUrl ?? imageUrl;
+    if (!mediaUrl) return null;
+
+    return {
+      type: item.media_type === 2 ? "video" : "image",
+      mediaUrl,
+      thumbnailUrl: imageUrl ?? null,
+    };
+  }
+
+  private async fetchUser(username: string): Promise<HikerUser | null> {
+    const res = await this.request(`/v2/user/by/username?username=${encodeURIComponent(username)}`);
+    if (res.status === 404) return null;
+
+    const body = (await res.json()) as { user?: HikerUser };
+    return body.user ?? null;
+  }
+
+  private async fetchStories(userId: HikerUser["pk"]): Promise<Story[]> {
+    const res = await this.request(`/v2/user/stories?user_id=${encodeURIComponent(String(userId))}`);
+
+    // A stories-fetch failure degrades to "no stories" rather than failing
+    // the whole profile lookup — we already have a valid profile to show.
+    if (!res.ok) return [];
+
+    const body = (await res.json()) as HikerStoriesResponse;
+    if (!body.reel?.items?.length) return [];
+
+    return body.reel.items
+      .map((item) => this.normalizeStoryItem(item))
+      .filter((story): story is Story => story !== null);
+  }
+
+  private normalizeStoryItem(item: HikerStoryItem): Story | null {
+    const videoUrl = item.video_versions?.[0]?.url;
+    const imageUrl = item.image_versions2?.candidates?.[0]?.url;
+    const mediaUrl = videoUrl ?? imageUrl;
+    if (!mediaUrl) return null;
+
+    return {
+      id: String(item.pk ?? item.id ?? item.taken_at),
+      type: videoUrl ? "video" : "image",
+      mediaUrl,
+      thumbnailUrl: imageUrl ?? null,
+      timestamp: item.taken_at ? new Date(item.taken_at * 1000).toISOString() : null,
+      // video_duration only exists for videos; images get Instagram's
+      // standard 5s display duration rather than 0 (which would make the
+      // viewer's auto-advance timer fire instantly and close on open).
+      duration: item.video_duration ?? 5,
+    };
+  }
+
+  /**
+   * Tries each configured HikerAPI key in order and returns the first
+   * response that's either a success or a genuine 404 — neither of which
+   * a different key would change, since both reflect the requested
+   * resource rather than the account making the request. Anything else
+   * (401 bad key, 403 blocked, 429 rate-limited, a 5xx on HikerAPI's
+   * side, or the request failing/timing out outright) is treated as
+   * "this key isn't working right now" and moves on to the next one;
+   * only once every configured key has failed does this throw.
+   */
+  private async request(path: string): Promise<Response> {
+    const keys = await getAllHikerApiKeys();
+    let lastError: ProviderError | null = null;
+
+    for (let i = 0; i < keys.length; i++) {
+      let res: Response;
+      try {
+        res = await this.attempt(path, keys[i]);
+      } catch (err) {
+        lastError = err instanceof ProviderError ? err : new ProviderError("Failed to reach HikerAPI.", "UPSTREAM_ERROR", err);
+        continue;
+      }
+
+      if (res.ok || res.status === 404) return res;
+
+      lastError = new ProviderError(
+        res.status === 401
+          ? "HikerAPI rejected the access key."
+          : res.status === 429
+            ? "Rate limited by HikerAPI."
+            : "HikerAPI returned an unexpected status.",
+        res.status === 429 ? "RATE_LIMITED" : "UPSTREAM_ERROR",
+        `status=${res.status}, key ${i + 1}/${keys.length}`,
+      );
+    }
+
+    throw lastError ?? new ProviderError("HikerAPI is unavailable.", "UPSTREAM_ERROR");
+  }
+
+  private async attempt(path: string, key: string): Promise<Response> {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+    try {
+      return await fetch(`${HIKERAPI_BASE}${path}`, {
+        signal: controller.signal,
+        cache: "no-store",
+        headers: {
+          accept: "application/json",
+          "x-access-key": key,
+        },
+      });
+    } catch (err) {
+      const isTimeout = err instanceof Error && err.name === "AbortError";
+      throw new ProviderError(
+        isTimeout ? "HikerAPI request timed out." : "Failed to reach HikerAPI.",
+        isTimeout ? "UPSTREAM_TIMEOUT" : "UPSTREAM_ERROR",
+        err,
+      );
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+}
