@@ -4,6 +4,7 @@ import Script from "next/script";
 import { getLocale } from "next-intl/server";
 import "./globals.css";
 import { getLocaleMeta } from "@/i18n/locales";
+import { routing } from "@/i18n/routing";
 import {
   SITE_NAME,
   SITE_URL,
@@ -35,7 +36,7 @@ export const metadata: Metadata = {
     site: TWITTER_HANDLE,
   },
   icons: {
-    icon: "/favicon.png",
+    icon: `${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/favicon.png`,
   },
   verification: {
     google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION || undefined,
@@ -73,7 +74,11 @@ export const viewport = {
  * result; harmless since there are no ad slots there to fill.
  */
 export default async function RootLayout({ children }: LayoutProps<"/">) {
-  const locale = await getLocale();
+  // getLocale() here runs before [locale]'s setRequestLocale and falls back
+  // to reading request headers, which a static export can't do — so the
+  // GitHub Pages build pins the shell to the default locale.
+  const locale =
+    process.env.NEXT_PUBLIC_STATIC_EXPORT === "true" ? routing.defaultLocale : await getLocale();
   const localeMeta = getLocaleMeta(locale);
   const htmlLang = localeMeta.hreflangCode ?? localeMeta.code;
 

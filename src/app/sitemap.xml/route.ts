@@ -4,6 +4,8 @@ import { routing } from "@/i18n/routing";
 import { getPathname } from "@/i18n/navigation";
 import { buildLanguageAlternates } from "@/i18n/alternates";
 
+export const dynamic = "force-static";
+
 const ROUTES = [
   { pathname: "/", changeFrequency: "daily", priority: 1.0 },
   { pathname: "/about-us", changeFrequency: "monthly", priority: 0.3 },
