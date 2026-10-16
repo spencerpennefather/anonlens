@@ -39,7 +39,9 @@ export const metadata: Metadata = {
     icon: `${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/favicon.png`,
   },
   verification: {
-    google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION || undefined,
+    google:
+      process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION ||
+      "U9kA9VmXCgvmGBW8F-3LS0n5J9d1ke2HAxl8pHe2ofw",
     other: process.env.NEXT_PUBLIC_AHREFS_VERIFICATION
       ? { "ahrefs-site-verification": process.env.NEXT_PUBLIC_AHREFS_VERIFICATION }
       : undefined,
@@ -89,6 +91,13 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
       className={`${inter.variable} h-full antialiased`}
     >
       <head>
+        <meta
+          name="google-site-verification"
+          content={
+            process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION ||
+            "U9kA9VmXCgvmGBW8F-3LS0n5J9d1ke2HAxl8pHe2ofw"
+          }
+        />
         {process.env.NEXT_PUBLIC_ADSENSE_CLIENT ? (
           <script
             async
