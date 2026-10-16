@@ -2,8 +2,14 @@ import { ImageResponse } from "next/og";
 import fs from "node:fs";
 import path from "node:path";
 import { SITE_NAME } from "@/lib/site";
+import { routing } from "@/i18n/routing";
 
+export const dynamic = "force-static";
 export const size = { width: 1200, height: 630 };
+
+export function generateStaticParams() {
+  return routing.locales.map((locale) => ({ locale }));
+}
 export const contentType = "image/png";
 
 export default function OpengraphImage() {
