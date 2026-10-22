@@ -8,10 +8,11 @@ export function proxy(request: NextRequest) {
   const host = request.headers.get("host") || "";
   const proto = request.headers.get("x-forwarded-proto");
 
+  const isLocal = host.includes("localhost") || host.includes("127.0.0.1") || host.startsWith("192.168.");
   const isWww = host.startsWith("www.");
   const isHttp = proto === "http";
 
-  if (isWww || isHttp) {
+  if (!isLocal && (isWww || isHttp)) {
     const cleanHost = host.replace(/^www\./i, "");
     const destination = new URL(request.nextUrl.pathname + request.nextUrl.search, `https://${cleanHost}`);
     return NextResponse.redirect(destination, 308);
