@@ -59,15 +59,15 @@ export function LanguageSwitcher() {
         aria-haspopup="listbox"
         aria-expanded={open}
         aria-label={t("label")}
-        className="flex h-11 shrink-0 items-center gap-1.5 rounded-full border border-border bg-surface px-3 text-sm font-medium text-foreground/80 outline-none transition-colors hover:border-foreground/30 hover:text-foreground sm:h-10"
+        className="flex h-9 shrink-0 items-center gap-2 rounded-full border border-border/80 bg-surface px-3.5 text-xs font-bold text-foreground shadow-xs outline-none transition-all hover:border-brand-orchid/50 hover:shadow-sm focus:ring-2 focus:ring-brand-orchid/30 cursor-pointer"
       >
-        <FlagIcon countryCode={current.countryCode} className="h-5 w-7 rounded-[3px] object-cover" />
-        <span>{current.displayCode ?? current.countryCode}</span>
+        <FlagIcon countryCode={current.countryCode} className="h-3.5 w-5 rounded-xs object-cover" />
+        <span className="tracking-wide">{current.displayCode ?? current.countryCode}</span>
       </button>
 
       {open && (
-        <div className="absolute right-0 top-full z-50 mt-2 w-56 overflow-hidden rounded-2xl border border-border bg-surface shadow-lg">
-          <div className="border-b border-border p-1.5">
+        <div className="absolute end-0 top-full z-50 mt-2.5 w-64 overflow-hidden rounded-2xl border border-border/80 bg-surface p-2 shadow-2xl shadow-black/10">
+          <div className="p-1 mb-1">
             <input
               ref={searchRef}
               type="text"
@@ -75,12 +75,12 @@ export function LanguageSwitcher() {
               onChange={(e) => setQuery(e.target.value)}
               placeholder={t("search")}
               aria-label={t("search")}
-              className="w-full rounded-xl bg-surface-muted px-3 py-2 text-sm text-foreground outline-none placeholder:text-foreground/40"
+              className="w-full rounded-xl bg-surface-muted px-3.5 py-2 text-xs sm:text-sm text-foreground outline-none placeholder:text-foreground/40 transition focus:ring-2 focus:ring-brand-orchid/30"
             />
           </div>
-          <ul role="listbox" aria-label={t("label")} className="max-h-72 overflow-y-auto p-1.5">
+          <ul role="listbox" aria-label={t("label")} className="max-h-72 overflow-y-auto space-y-1 p-0.5">
             {filteredLocales.length === 0 ? (
-              <li className="px-3 py-2 text-sm text-foreground/50">{t("noResults")}</li>
+              <li className="px-3.5 py-2 text-xs text-foreground/50">{t("noResults")}</li>
             ) : (
               filteredLocales.map((l) => {
                 const active = l.code === locale;
@@ -91,15 +91,21 @@ export function LanguageSwitcher() {
                       role="option"
                       aria-selected={active}
                       onClick={() => setLocaleCookie(l.code)}
-                      className={`flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-medium transition-colors ${
+                      className={`flex w-full items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm transition-all ${
                         active
-                          ? "brand-gradient text-white"
-                          : "text-foreground/80 hover:bg-surface-muted"
+                          ? "bg-gradient-to-r from-[#d82b6b] via-[#ea580c] to-[#65a30d] text-white shadow-sm"
+                          : "text-foreground/90 hover:bg-surface-muted"
                       }`}
                     >
-                      <FlagIcon countryCode={l.countryCode} />
-                      <span className="truncate">{l.nativeName}</span>
-                      <span className="ml-auto shrink-0 text-xs text-foreground/40">
+                      <FlagIcon countryCode={l.countryCode} className="h-4 w-5 shrink-0 rounded-xs object-cover" />
+                      <span className={`truncate ${active ? "font-bold text-white" : "font-medium text-foreground"}`}>
+                        {l.nativeName}
+                      </span>
+                      <span
+                        className={`ms-auto shrink-0 text-xs font-semibold ${
+                          active ? "text-lime-200/95" : "text-foreground/40"
+                        }`}
+                      >
                         {l.displayCode ?? l.countryCode}
                       </span>
                     </a>
