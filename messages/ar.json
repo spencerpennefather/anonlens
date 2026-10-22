@@ -1,8 +1,10 @@
 {
   "Nav": {
+    "features": "المميزات",
     "howItWorks": "كيف يعمل",
-    "about": "من نحن",
+    "whyUs": "لماذا AnonLens",
     "faq": "الأسئلة الشائعة",
+    "about": "من نحن",
     "contact": "اتصل بنا"
   },
   "Header": {

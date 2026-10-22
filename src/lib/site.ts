@@ -20,10 +20,10 @@ export const TWITTER_HANDLE = BRAND.twitterHandle;
 export const CONTACT_EMAIL = BRAND.email;
 
 export const NAV_LINKS = [
+  { href: "/#features", key: "features" },
   { href: "/#how-it-works", key: "howItWorks" },
-  { href: "/#about", key: "about" },
+  { href: "/#why-anonlens", key: "whyUs" },
   { href: "/#faq", key: "faq" },
-  { href: "/#contact", key: "contact" },
 ] as const;
 
 export { MAIN_SITE_URL } from "@/lib/brand";

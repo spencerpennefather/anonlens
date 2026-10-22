@@ -118,6 +118,12 @@ export function StoryProgressBar({
                 style={{ width: `${prog}%` }}
                 aria-hidden="true"
               />
+              {/* Premium hover preview tooltip */}
+              <div className="pointer-events-none absolute -bottom-7 start-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-all duration-150 z-50 scale-95 group-hover:scale-100">
+                <div className="rounded-md bg-surface px-2 py-0.5 text-[10px] font-bold text-foreground shadow-lg border border-border/80 whitespace-nowrap">
+                  {sec.label}
+                </div>
+              </div>
               <span className="sr-only">
                 {sec.label}: {Math.round(prog)}% viewed
               </span>

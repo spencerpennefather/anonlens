@@ -1,8 +1,10 @@
 {
   "Nav": {
+    "features": "Features",
     "howItWorks": "How It Works",
-    "about": "About",
+    "whyUs": "Why AnonLens",
     "faq": "FAQ",
+    "about": "About",
     "contact": "Contact"
   },
   "Header": {

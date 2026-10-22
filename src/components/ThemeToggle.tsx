@@ -45,40 +45,40 @@ export function ThemeToggle() {
       type="button"
       onClick={toggle}
       aria-label={theme === "dark" ? t("switchToLight") : t("switchToDark")}
-      className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-border bg-surface text-foreground/70 transition-colors hover:text-foreground sm:h-10 sm:w-10"
+      className="group relative flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-border/80 bg-surface shadow-xs text-foreground/75 transition-all hover:border-brand-orchid/50 hover:text-brand-orchid hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-brand-orchid/30 active:scale-95 cursor-pointer"
     >
-      {theme === "dark" ? (
-        <svg
-          width="18"
-          height="18"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          aria-hidden
-        >
-          <circle cx="12" cy="12" r="4" />
-          <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" />
-        </svg>
-      ) : theme === "light" ? (
-        <svg
-          width="18"
-          height="18"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          aria-hidden
-        >
-          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79Z" />
-        </svg>
-      ) : (
-        <span className="h-[18px] w-[18px]" aria-hidden />
-      )}
+      <div className="relative flex h-[18px] w-[18px] items-center justify-center transition-transform duration-300 group-hover:rotate-12">
+        {theme === "dark" ? (
+          <svg
+            className="h-[18px] w-[18px] text-brand-honey transition-colors"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden
+          >
+            <circle cx="12" cy="12" r="4" fill="currentColor" fillOpacity="0.2" />
+            <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" />
+          </svg>
+        ) : theme === "light" ? (
+          <svg
+            className="h-[18px] w-[18px] text-brand-violet transition-colors"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden
+          >
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79Z" fill="currentColor" fillOpacity="0.15" />
+          </svg>
+        ) : (
+          <span className="h-[18px] w-[18px]" aria-hidden />
+        )}
+      </div>
     </button>
   );
 }

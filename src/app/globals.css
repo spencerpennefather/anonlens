@@ -110,17 +110,18 @@ h1, h2, h3, h4, h5, h6, .font-heading {
 }
 
 .story-bar-segment {
-  height: 3.5px;
+  height: 3px;
   flex: 1;
-  background: color-mix(in srgb, var(--foreground) 15%, transparent);
+  background: color-mix(in srgb, var(--foreground) 14%, transparent);
   border-radius: 9999px;
-  overflow: hidden;
   position: relative;
-  transition: background-color 0.2s ease;
+  transition: height 0.2s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.2s ease;
+  cursor: pointer;
 }
 
 .story-bar-segment:hover {
-  background: color-mix(in srgb, var(--foreground) 30%, transparent);
+  height: 4.5px;
+  background: color-mix(in srgb, var(--foreground) 26%, transparent);
 }
 
 .story-bar-fill {
@@ -130,6 +131,7 @@ h1, h2, h3, h4, h5, h6, .font-heading {
   bottom: 0;
   background: linear-gradient(90deg, var(--brand-violet), var(--brand-orchid), var(--brand-ember));
   border-radius: 9999px;
+  box-shadow: 0 0 8px rgba(217, 60, 147, 0.35);
   transition: width 0.15s linear;
 }
 
