@@ -98,7 +98,18 @@ export default async function HomePage({ params }: Props) {
               </h1>
 
               <p className="mt-4 text-base sm:text-lg text-foreground/75 max-w-xl mx-auto lg:ms-0 lg:me-auto">
-                {t("sub1")}
+                {t.rich("sub1", {
+                  link: (chunks) => (
+                    <a
+                      href="http://instaviewstories.com/"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-semibold text-brand-orchid hover:underline underline-offset-4 transition-colors"
+                    >
+                      {chunks}
+                    </a>
+                  ),
+                })}
               </p>
 
               {/* Feature Badges */}
