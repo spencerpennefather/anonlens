@@ -1,15 +1,16 @@
 "use client";
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
+import { getPathname } from "@/i18n/navigation";
 import { validateUsername } from "@/lib/story/validation";
-import { MAIN_SITE_URL } from "@/lib/brand";
 
 /** Dispatched by anything outside this component (e.g. the featured-accounts carousel or CTA) that wants to trigger a search. */
 export const SEARCH_USERNAME_EVENT = "iv:search-username";
 
 export function StoryTool() {
   const t = useTranslations("StoryTool");
+  const locale = useLocale();
   const [input, setInput] = useState("");
   const [status, setStatus] = useState<"idle" | "loading">("idle");
   const [formError, setFormError] = useState<string | null>(null);
@@ -43,8 +44,9 @@ export function StoryTool() {
     setStatus("loading");
     setRedirectUsername(finalUsername);
 
+    const profileUrl = getPathname({ href: `/profile/${encodeURIComponent(finalUsername)}/`, locale });
     setTimeout(() => {
-      window.location.assign(MAIN_SITE_URL);
+      window.location.assign(profileUrl);
     }, 450);
   }
 
@@ -56,13 +58,14 @@ export function StoryTool() {
       setInput(clean);
       setRedirectUsername(clean);
       setStatus("loading");
+      const profileUrl = getPathname({ href: `/profile/${encodeURIComponent(clean)}/`, locale });
       setTimeout(() => {
-        window.location.assign(MAIN_SITE_URL);
+        window.location.assign(profileUrl);
       }, 450);
     }
     window.addEventListener(SEARCH_USERNAME_EVENT, onExternalSearch);
     return () => window.removeEventListener(SEARCH_USERNAME_EVENT, onExternalSearch);
-  }, []);
+  }, [locale]);
 
   const popularExamples = ["cristiano", "leomessi", "selenagomez", "kyliejenner"];
 
@@ -71,8 +74,9 @@ export function StoryTool() {
     setFormError(null);
     setRedirectUsername(username);
     setStatus("loading");
+    const profileUrl = getPathname({ href: `/profile/${encodeURIComponent(username)}/`, locale });
     setTimeout(() => {
-      window.location.assign(MAIN_SITE_URL);
+      window.location.assign(profileUrl);
     }, 450);
   }
 
@@ -81,8 +85,6 @@ export function StoryTool() {
       {/* Outer Glow Card Container */}
       <div className="relative rounded-3xl p-1.5 sm:p-2 bg-gradient-to-r from-brand-violet/30 via-brand-orchid/30 to-brand-ember/30 shadow-xl shadow-brand-orchid/10 transition-all focus-within:shadow-2xl focus-within:shadow-brand-orchid/20">
         <form
-          action={MAIN_SITE_URL}
-          method="GET"
           onSubmit={handleSubmit}
           className="flex flex-col gap-2 sm:flex-row relative rounded-2xl bg-surface p-1.5"
           aria-label={t("searchAriaLabel")}
@@ -186,7 +188,7 @@ export function StoryTool() {
         >
           <div className="h-5 w-5 animate-spin rounded-full border-2 border-brand-orchid border-t-transparent shrink-0" />
           <span className="text-sm font-semibold text-foreground">
-            Opening @{redirectUsername} on instaviewstories.com...
+            Opening @{redirectUsername}...
           </span>
         </div>
       )}

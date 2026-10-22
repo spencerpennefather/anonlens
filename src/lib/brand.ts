@@ -3,7 +3,7 @@
  * Colours live in src/app/globals.css (:root tokens) and public/ holds the logo,
  * favicon and mascot art. See README "Branding configuration".
  */
-export const MAIN_SITE_URL = "https://instaviewstories.com/";
+export const MAIN_SITE_URL = "/#search";
 
 export const BRAND = {
   name: "AnonLens",

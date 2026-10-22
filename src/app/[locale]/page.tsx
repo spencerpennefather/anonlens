@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
 import { StoryTool } from "@/components/story-tool/StoryTool";
-import { FeaturedCarousel } from "@/components/story-tool/FeaturedCarousel";
 import { HeroPhoneMockup } from "@/components/redesign/HeroPhoneMockup";
 import { FeatureRail } from "@/components/redesign/FeatureRail";
 import { HowItWorks } from "@/components/redesign/HowItWorks";
@@ -137,15 +136,6 @@ export default async function HomePage({ params }: Props) {
           </div>
         </div>
 
-        {/* Trending Profiles Marquee */}
-        <div className="mt-12 sm:mt-16 border-t border-border/60 pt-6">
-          <div className="mx-auto max-w-6xl px-4 sm:px-6 mb-3">
-            <p className="text-center text-xs font-semibold uppercase tracking-wider text-foreground/45">
-              {t("trendingCaption")}
-            </p>
-          </div>
-          <FeaturedCarousel />
-        </div>
       </section>
 
       {/* ── 2. Features as a horizontal rail of six story-frames ── */}
