@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Image from "next/image";
 import { getTranslations } from "next-intl/server";
 import { StoryTool } from "@/components/story-tool/StoryTool";
 import { FeaturedCarousel } from "@/components/story-tool/FeaturedCarousel";
@@ -22,7 +21,7 @@ import { buildMetadata } from "@/lib/seo/metadata";
 import { getPathname } from "@/i18n/navigation";
 import { buildLanguageAlternates } from "@/i18n/alternates";
 import { getOgLocale } from "@/i18n/locales";
-import { SITE_NAME, CONTACT_EMAIL } from "@/lib/site";
+import { SITE_NAME } from "@/lib/site";
 
 type Props = PageProps<"/[locale]">;
 
@@ -173,60 +172,6 @@ export default async function HomePage({ params }: Props) {
 
       {/* ── 8. Final CTA (scrolls up to search and focuses input) ── */}
       <FinalCta />
-
-      {/* ── 9. Contact ── */}
-      <section id="contact" className="py-12 sm:py-16">
-        <div className="mx-auto max-w-4xl px-4 sm:px-6 text-center">
-          <span className="inline-block rounded-full bg-brand-violet/10 px-3.5 py-1 text-xs font-bold text-brand-violet border border-brand-violet/20">
-            Get In Touch
-          </span>
-          <h2 className="mt-3 text-2xl sm:text-3xl font-extrabold tracking-tight text-foreground">
-            {t("contactTitle")}
-          </h2>
-          <p className="mt-2 text-xs sm:text-sm text-foreground/70 max-w-lg mx-auto">
-            {t("contactText")}
-          </p>
-
-          <div className="mt-8 relative overflow-hidden rounded-3xl border border-border/80 bg-surface p-6 sm:p-10 shadow-sm flex flex-col items-center">
-            <div className="relative mb-6 sm:hidden w-full max-w-xs">
-              <Image
-                src="/contact-mobile.png"
-                alt="Contact Mascot"
-                width={1024}
-                height={1536}
-                className="w-full h-auto drop-shadow-sm rounded-2xl"
-                sizes="100vw"
-              />
-            </div>
-            <div className="relative mb-6 hidden sm:block max-w-lg">
-              <Image
-                src="/contact.png"
-                alt="Contact Mascot"
-                width={1944}
-                height={809}
-                className="w-full h-auto drop-shadow-sm rounded-2xl"
-                sizes="(min-width: 640px) 512px, 100vw"
-              />
-            </div>
-
-            <a
-              href={`mailto:${CONTACT_EMAIL}`}
-              className="relative overflow-hidden group brand-gradient inline-flex items-center gap-2.5 rounded-full px-8 py-3.5 text-sm font-bold text-white shadow-md shadow-brand-orchid/25 transition-all duration-300 hover:shadow-xl hover:shadow-brand-orchid/40 hover:-translate-y-0.5 active:translate-y-0 active:scale-95 cursor-pointer"
-            >
-              {/* Shimmer sweep */}
-              <span
-                aria-hidden="true"
-                className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/25 to-transparent transition-transform duration-700 ease-out group-hover:translate-x-full"
-              />
-              <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="shrink-0 relative z-10">
-                <rect x="2" y="4" width="20" height="16" rx="2" />
-                <path d="m2 7 10 6 10-6" />
-              </svg>
-              <span className="relative z-10">{CONTACT_EMAIL}</span>
-            </a>
-          </div>
-        </div>
-      </section>
     </>
   );
 }

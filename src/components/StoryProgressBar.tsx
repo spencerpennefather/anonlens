@@ -16,7 +16,6 @@ const DEFAULT_SECTIONS: StorySection[] = [
   { id: "privacy", label: "Privacy & Safety" },
   { id: "faq", label: "FAQ" },
   { id: "cta", label: "Get Started" },
-  { id: "contact", label: "Contact" },
 ];
 
 export function StoryProgressBar({

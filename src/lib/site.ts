@@ -36,7 +36,6 @@ export const STORY_SECTIONS = [
   { id: "who-uses-it", key: "storyWho" },
   { id: "privacy", key: "storyPrivacy" },
   { id: "faq", key: "storyFaq" },
-  { id: "contact", key: "storyContact" },
 ] as const;
 
 export const FOOTER_TOOL_LINKS = [
