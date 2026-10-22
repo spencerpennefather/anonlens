@@ -26,9 +26,33 @@ export const NAV_LINKS = [
   { href: "/#contact", key: "contact" },
 ] as const;
 
+export { MAIN_SITE_URL } from "@/lib/brand";
+
+export const STORY_SECTIONS = [
+  { id: "search", key: "storyHero" },
+  { id: "features", key: "storyFeatures" },
+  { id: "how-it-works", key: "storyHowItWorks" },
+  { id: "why-anonlens", key: "storyWhy" },
+  { id: "who-uses-it", key: "storyWho" },
+  { id: "privacy", key: "storyPrivacy" },
+  { id: "faq", key: "storyFaq" },
+  { id: "contact", key: "storyContact" },
+] as const;
+
+export const FOOTER_TOOL_LINKS = [
+  { href: "/#search", key: "toolStories" },
+  { href: "/#search", key: "toolHighlights" },
+  { href: "/#search", key: "toolReels" },
+  { href: "/#search", key: "toolProfile" },
+  { href: "/#search", key: "toolDownloader" },
+] as const;
+
 export const FOOTER_COMPANY_LINKS = [
   { href: "/about-us/", key: "linkAbout" },
   { href: "/contact-us/", key: "linkContact" },
+] as const;
+
+export const FOOTER_LEGAL_LINKS = [
   { href: "/privacy-policy/", key: "linkPrivacy" },
   { href: "/terms-and-conditions/", key: "linkTerms" },
   { href: "/disclaimer/", key: "linkDisclaimer" },
@@ -42,3 +66,4 @@ export const SOCIAL_LINKS = [
   { name: "X", href: BRAND.social.x },
   { name: "YouTube", href: BRAND.social.youtube },
 ] as const;
+

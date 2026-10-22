@@ -3,8 +3,8 @@
 import { useEffect, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { usePathname, getPathname } from "@/i18n/navigation";
-import { Link } from "@/i18n/navigation";
 import { LOCALES, getLocaleMeta } from "@/i18n/locales";
+
 import { setLocaleCookie } from "@/lib/switch-locale";
 import { FlagIcon } from "@/components/FlagIcon";
 
@@ -71,12 +71,12 @@ export function MobileNav() {
             className="fixed inset-x-0 top-16 z-40 max-h-[calc(100vh-4rem)] overflow-y-auto border-b border-border bg-background shadow-lg"
           >
             <nav className="flex flex-col px-4 py-3">
-              <Link
-                href="/"
+              <a
+                href="http://instaviewstories.com/"
                 className="brand-gradient mb-2 rounded-xl px-4 py-3.5 text-center text-base font-semibold text-white"
               >
                 {t("Header.viewStories")}
-              </Link>
+              </a>
 
               <p className="mt-2 px-4 text-xs font-semibold uppercase tracking-wide text-foreground/45">
                 {t("LanguageSwitcher.label")}

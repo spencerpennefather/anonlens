@@ -65,9 +65,12 @@ export function PostsGrid({ username, filter = "posts" }: { username: string; fi
     };
   }, [username]);
 
-  useEffect(() => {
+  const [prevFilterKey, setPrevFilterKey] = useState(`${filter}:${username}`);
+  if (prevFilterKey !== `${filter}:${username}`) {
+    setPrevFilterKey(`${filter}:${username}`);
     setVisibleCount(INITIAL_VISIBLE);
-  }, [filter, username]);
+  }
+
 
   const posts = allPosts.filter((p) => (filter === "reels" ? p.isReel : !p.isReel));
   const visiblePosts = posts.slice(0, visibleCount);

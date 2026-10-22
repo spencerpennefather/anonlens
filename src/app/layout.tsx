@@ -1,10 +1,9 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Syne, Figtree } from "next/font/google";
 import Script from "next/script";
 import { getLocale } from "next-intl/server";
 import "./globals.css";
 import { getLocaleMeta } from "@/i18n/locales";
-import { routing } from "@/i18n/routing";
 import {
   SITE_NAME,
   SITE_URL,
@@ -12,9 +11,17 @@ import {
   TWITTER_HANDLE,
 } from "@/lib/site";
 
-const inter = Inter({
-  variable: "--font-inter",
+const syne = Syne({
+  variable: "--font-syne",
   subsets: ["latin"],
+  weight: ["700", "800"],
+  display: "swap",
+});
+
+const figtree = Figtree({
+  variable: "--font-figtree",
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
   display: "swap",
 });
 
@@ -36,12 +43,10 @@ export const metadata: Metadata = {
     site: TWITTER_HANDLE,
   },
   icons: {
-    icon: `${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/favicon.png`,
+    icon: "/favicon.png",
   },
   verification: {
-    google:
-      process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION ||
-      "U9kA9VmXCgvmGBW8F-3LS0n5J9d1ke2HAxl8pHe2ofw",
+    google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION || undefined,
     other: process.env.NEXT_PUBLIC_AHREFS_VERIFICATION
       ? { "ahrefs-site-verification": process.env.NEXT_PUBLIC_AHREFS_VERIFICATION }
       : undefined,
@@ -50,8 +55,8 @@ export const metadata: Metadata = {
 
 export const viewport = {
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#fafafa" },
-    { media: "(prefers-color-scheme: dark)", color: "#100a0d" },
+    { media: "(prefers-color-scheme: light)", color: "#FBF5F8" },
+    { media: "(prefers-color-scheme: dark)", color: "#170B1F" },
   ],
 };
 
@@ -76,11 +81,7 @@ export const viewport = {
  * result; harmless since there are no ad slots there to fill.
  */
 export default async function RootLayout({ children }: LayoutProps<"/">) {
-  // getLocale() here runs before [locale]'s setRequestLocale and falls back
-  // to reading request headers, which a static export can't do — so the
-  // GitHub Pages build pins the shell to the default locale.
-  const locale =
-    process.env.NEXT_PUBLIC_STATIC_EXPORT === "true" ? routing.defaultLocale : await getLocale();
+  const locale = await getLocale();
   const localeMeta = getLocaleMeta(locale);
   const htmlLang = localeMeta.hreflangCode ?? localeMeta.code;
 
@@ -88,16 +89,9 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
     <html
       lang={htmlLang}
       dir={localeMeta.dir}
-      className={`${inter.variable} h-full antialiased`}
+      className={`${syne.variable} ${figtree.variable} h-full antialiased`}
     >
       <head>
-        <meta
-          name="google-site-verification"
-          content={
-            process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION ||
-            "U9kA9VmXCgvmGBW8F-3LS0n5J9d1ke2HAxl8pHe2ofw"
-          }
-        />
         {process.env.NEXT_PUBLIC_ADSENSE_CLIENT ? (
           <script
             async
@@ -106,7 +100,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
           />
         ) : null}
       </head>
-      <body className="min-h-full flex flex-col">
+      <body className="min-h-full flex flex-col font-sans">
         <Script id="theme-init" strategy="beforeInteractive">
           {`try {
             var t = localStorage.getItem('theme');
@@ -120,3 +114,4 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
     </html>
   );
 }
+

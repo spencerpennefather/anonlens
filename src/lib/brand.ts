@@ -3,6 +3,8 @@
  * Colours live in src/app/globals.css (:root tokens) and public/ holds the logo,
  * favicon and mascot art. See README "Branding configuration".
  */
+export const MAIN_SITE_URL = "https://instaviewstories.com/";
+
 export const BRAND = {
   name: "AnonLens",
   slug: "anonlens",
@@ -10,7 +12,18 @@ export const BRAND = {
   tagline: "Simple, Fast and Free Instagram Story Viewer",
   email: "info@anonlens.com",
   twitterHandle: "@anonlens",
-  colors: { primary: "#d92876", secondary: "#d33026", accent: "#76f916", link: "#ed3a8d" },
+  colors: {
+    violet: "#7A4DF0",
+    orchid: "#D93C93",
+    ember: "#FF6A3D",
+    honey: "#FFC04D",
+    darkNeutral: "#170B1F",
+    lightBackground: "#FBF5F8",
+    primary: "#7A4DF0",
+    secondary: "#D93C93",
+    accent: "#FF6A3D",
+    link: "#D93C93",
+  },
   social: {
     linkedin: "https://www.linkedin.com/company/anonlens/",
     facebook: "https://www.facebook.com/anonlens/",
@@ -20,3 +33,4 @@ export const BRAND = {
     youtube: "https://youtube.com/@anonlens",
   },
 } as const;
+

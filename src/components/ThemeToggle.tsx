@@ -10,11 +10,16 @@ export function ThemeToggle() {
   const [theme, setTheme] = useState<Theme | null>(null);
 
   useEffect(() => {
-    const stored = localStorage.getItem("theme");
+    let stored: string | null = null;
+    try {
+      stored = localStorage.getItem("theme");
+    } catch {
+      // localStorage may be disabled or in private browsing
+    }
     const initial: Theme =
       stored === "light" || stored === "dark"
         ? stored
-        : window.matchMedia("(prefers-color-scheme: dark)").matches
+        : typeof window !== "undefined" && window.matchMedia("(prefers-color-scheme: dark)").matches
           ? "dark"
           : "light";
 
@@ -27,8 +32,13 @@ export function ThemeToggle() {
     const next: Theme = theme === "dark" ? "light" : "dark";
     setTheme(next);
     document.documentElement.setAttribute("data-theme", next);
-    localStorage.setItem("theme", next);
+    try {
+      localStorage.setItem("theme", next);
+    } catch {
+      // ignore storage error
+    }
   }
+
 
   return (
     <button

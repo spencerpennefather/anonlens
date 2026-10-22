@@ -31,13 +31,29 @@ export function organizationSchema(): SchemaObject {
   };
 }
 
-export function softwareApplicationSchema(): SchemaObject {
+export function webPageSchema(args: { name: string; description: string; path: string }): SchemaObject {
   return {
     "@context": "https://schema.org",
-    "@type": "SoftwareApplication",
-    name: `${SITE_NAME}: Instagram Story Viewer`,
-    applicationCategory: "UtilitiesApplication",
-    operatingSystem: "Web",
+    "@type": "WebPage",
+    name: args.name,
+    description: args.description,
+    url: `${SITE_URL}${args.path}`,
+    isPartOf: {
+      "@type": "WebSite",
+      name: SITE_NAME,
+      url: SITE_URL,
+    },
+  };
+}
+
+export function webApplicationSchema(): SchemaObject {
+  return {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    name: `${SITE_NAME}: Anonymous Instagram Story Viewer`,
+    applicationCategory: "UtilityApplication",
+    operatingSystem: "All",
+    browserRequirements: "Requires JavaScript. Requires HTML5.",
     url: SITE_URL,
     description: SITE_DESCRIPTION,
     offers: {
@@ -47,6 +63,26 @@ export function softwareApplicationSchema(): SchemaObject {
     },
   };
 }
+
+export function softwareApplicationSchema(): SchemaObject {
+  return webApplicationSchema();
+}
+
+export function howToSchema(steps: { name: string; text: string }[]): SchemaObject {
+  return {
+    "@context": "https://schema.org",
+    "@type": "HowTo",
+    name: "How to View Instagram Stories Anonymously with AnonLens",
+    description: "Step-by-step guide to anonymously watch and download Instagram Stories without an account or notification.",
+    step: steps.map((s, index) => ({
+      "@type": "HowToStep",
+      position: index + 1,
+      name: s.name,
+      text: s.text,
+    })),
+  };
+}
+
 
 export interface BreadcrumbItem {
   name: string;
