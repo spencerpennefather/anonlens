@@ -52,23 +52,33 @@ export function PrivacySection() {
           {safetyCards.map((card) => (
             <div
               key={card.title}
-              className="rounded-3xl border border-border/80 bg-surface p-6 sm:p-7 shadow-sm transition-all duration-300 hover:border-brand-orchid/40 hover:shadow-lg"
+              className="group relative flex flex-col justify-between overflow-hidden rounded-3xl border border-border/80 bg-surface p-6 sm:p-7 shadow-sm transition-all duration-300 hover:-translate-y-1.5 hover:border-brand-orchid/40 hover:shadow-xl hover:shadow-brand-orchid/5"
             >
-              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-surface-muted border border-border/80">
-                {card.icon}
+              {/* Gradient top accent */}
+              <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-brand-violet via-brand-orchid to-brand-ember opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+
+              <div>
+                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-surface-muted border border-border/80 transition-transform duration-300 group-hover:scale-105">
+                  {card.icon}
+                </div>
+                <h3 className="mt-4 text-lg font-bold tracking-tight text-foreground transition-colors group-hover:text-brand-orchid">
+                  {card.title}
+                </h3>
+                <p className="mt-2 text-xs sm:text-sm leading-relaxed text-foreground/65">
+                  {card.desc}
+                </p>
               </div>
-              <h3 className="mt-4 text-lg font-bold tracking-tight text-foreground">
-                {card.title}
-              </h3>
-              <p className="mt-2 text-xs sm:text-sm leading-relaxed text-foreground/65">
-                {card.desc}
-              </p>
+
+              <div className="mt-5 pt-3.5 border-t border-border/50 flex items-center gap-1.5 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                <span>Verified & Protected</span>
+              </div>
             </div>
           ))}
         </div>
 
         {/* Clear Disclaimer Banner */}
-        <div className="mt-10 rounded-2xl border border-brand-orchid/30 bg-gradient-to-r from-brand-violet/5 via-brand-orchid/5 to-brand-ember/5 p-5 text-center text-xs leading-relaxed text-foreground/75">
+        <div className="mt-10 rounded-2xl border border-brand-orchid/30 bg-gradient-to-r from-brand-violet/5 via-brand-orchid/5 to-brand-ember/5 p-5 text-start sm:text-center text-xs leading-relaxed text-foreground/75">
           <p className="font-semibold text-foreground">
             Independent Third-Party Service Disclaimer
           </p>

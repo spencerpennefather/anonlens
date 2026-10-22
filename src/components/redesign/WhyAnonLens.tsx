@@ -127,11 +127,17 @@ export function WhyAnonLens() {
           {reasons.map((item) => (
             <div
               key={item.num}
-              className="group relative flex flex-col justify-between rounded-3xl border border-border/80 bg-surface p-6 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-brand-orchid/40 hover:shadow-lg"
+              className="group relative flex flex-col justify-between overflow-hidden rounded-3xl border border-border/80 bg-surface p-6 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-brand-orchid/40 hover:shadow-xl hover:shadow-brand-orchid/5 text-start"
             >
+              {/* Top accent hairline */}
+              <div
+                aria-hidden="true"
+                className="absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-transparent via-brand-orchid/40 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100"
+              />
+
               <div>
                 <div className="flex items-center justify-between">
-                  <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-surface-muted border border-border/80">
+                  <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-surface-muted border border-border/80 shadow-xs">
                     {item.icon}
                   </span>
                   <span className="text-xs font-mono font-bold text-foreground/40">
@@ -161,10 +167,10 @@ export function WhyAnonLens() {
           </div>
 
           <div className="overflow-x-auto rounded-3xl border border-border/80 bg-surface shadow-sm">
-            <table className="w-full text-left border-collapse min-w-[560px]">
+            <table className="w-full text-start border-collapse min-w-[560px]">
               <thead>
                 <tr className="border-b border-border bg-surface-muted/60 text-xs sm:text-sm font-bold">
-                  <th className="py-4 px-6 text-foreground">Feature</th>
+                  <th className="py-4 px-6 text-foreground text-start">Feature</th>
                   <th className="py-4 px-6 text-brand-orchid font-extrabold bg-brand-orchid/5 border-x border-brand-orchid/20 text-center">
                     AnonLens
                   </th>

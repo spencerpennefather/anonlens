@@ -7,6 +7,7 @@ import { LOCALES, getLocaleMeta } from "@/i18n/locales";
 
 import { setLocaleCookie } from "@/lib/switch-locale";
 import { FlagIcon } from "@/components/FlagIcon";
+import { MAIN_SITE_URL } from "@/lib/site";
 
 export function MobileNav() {
   const t = useTranslations();
@@ -72,7 +73,7 @@ export function MobileNav() {
           >
             <nav className="flex flex-col px-4 py-3">
               <a
-                href="http://instaviewstories.com/"
+                href={MAIN_SITE_URL}
                 className="brand-gradient mb-2 rounded-xl px-4 py-3.5 text-center text-base font-semibold text-white"
               >
                 {t("Header.viewStories")}

@@ -27,6 +27,21 @@ export function HeroPhoneMockup() {
         className="absolute -inset-4 rounded-[48px] bg-gradient-to-tr from-brand-violet via-brand-orchid to-brand-ember opacity-25 blur-2xl -z-10 animate-pulse"
       />
 
+      {/* Floating Pill Badge 1: Ghost Mode (Top-Start) */}
+      <div className="pointer-events-none absolute -top-4 -start-6 z-30 hidden sm:flex items-center gap-2 rounded-2xl bg-surface/95 border border-border/80 px-3.5 py-2 shadow-xl shadow-black/10 backdrop-blur-md">
+        <span className="relative flex h-2.5 w-2.5">
+          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+          <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500" />
+        </span>
+        <span className="text-xs font-bold text-foreground tracking-tight">Ghost Mode Active</span>
+      </div>
+
+      {/* Floating Pill Badge 2: Stealth View (Bottom-End) */}
+      <div className="pointer-events-none absolute -bottom-3 -end-6 z-30 hidden sm:flex items-center gap-2 rounded-2xl bg-surface/95 border border-border/80 px-3.5 py-2 shadow-xl shadow-black/10 backdrop-blur-md">
+        <span className="text-sm">🔒</span>
+        <span className="text-xs font-bold text-foreground tracking-tight">Zero Trace Viewing</span>
+      </div>
+
       {/* Phone Shell */}
       <div className="relative rounded-[40px] border-[6px] border-surface bg-[#120819] p-3 shadow-2xl shadow-brand-orchid/20 ring-1 ring-border/50">
         {/* Dynamic Island / Notch */}

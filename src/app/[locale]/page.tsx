@@ -89,7 +89,7 @@ export default async function HomePage({ params }: Props) {
         <div className="mx-auto max-w-6xl px-4 sm:px-6">
           <div className="flex flex-col lg:flex-row items-center gap-10 lg:gap-14">
             {/* Left Column: Heading, Badges, Search Form */}
-            <div className="w-full text-center lg:text-left flex-1">
+            <div className="w-full text-center lg:text-start flex-1">
               <div className="inline-flex items-center gap-2 rounded-full bg-surface border border-border/80 px-3.5 py-1 text-xs font-semibold text-brand-orchid shadow-xs">
                 <span className="flex h-2 w-2 rounded-full bg-brand-orchid animate-ping" />
                 <span>{t("heroEyebrow")}</span>
@@ -99,7 +99,7 @@ export default async function HomePage({ params }: Props) {
                 {t("h1")}
               </h1>
 
-              <p className="mt-4 text-base sm:text-lg text-foreground/75 max-w-xl mx-auto lg:mx-0">
+              <p className="mt-4 text-base sm:text-lg text-foreground/75 max-w-xl mx-auto lg:ms-0 lg:me-auto">
                 {t("sub1")}
               </p>
 
@@ -126,7 +126,7 @@ export default async function HomePage({ params }: Props) {
               </div>
 
               {/* Main Search Input & CTA Form */}
-              <div className="mt-8 max-w-xl mx-auto lg:mx-0">
+              <div className="mt-8 max-w-xl mx-auto lg:ms-0 lg:me-auto">
                 <StoryTool />
               </div>
             </div>
@@ -211,13 +211,18 @@ export default async function HomePage({ params }: Props) {
 
             <a
               href={`mailto:${CONTACT_EMAIL}`}
-              className="brand-gradient inline-flex items-center gap-2.5 rounded-full px-8 py-3.5 text-sm font-bold text-white shadow-md shadow-brand-orchid/20 transition-all duration-200 hover:opacity-90 hover:shadow-lg cursor-pointer"
+              className="relative overflow-hidden group brand-gradient inline-flex items-center gap-2.5 rounded-full px-8 py-3.5 text-sm font-bold text-white shadow-md shadow-brand-orchid/25 transition-all duration-300 hover:shadow-xl hover:shadow-brand-orchid/40 hover:-translate-y-0.5 active:translate-y-0 active:scale-95 cursor-pointer"
             >
-              <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
+              {/* Shimmer sweep */}
+              <span
+                aria-hidden="true"
+                className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/25 to-transparent transition-transform duration-700 ease-out group-hover:translate-x-full"
+              />
+              <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="shrink-0 relative z-10">
                 <rect x="2" y="4" width="20" height="16" rx="2" />
                 <path d="m2 7 10 6 10-6" />
               </svg>
-              <span>{CONTACT_EMAIL}</span>
+              <span className="relative z-10">{CONTACT_EMAIL}</span>
             </a>
           </div>
         </div>

@@ -1,5 +1,6 @@
 "use client";
 
+import { useRef } from "react";
 import { useTranslations } from "next-intl";
 
 export function IconStoryViewer({ className = "w-12 h-12" }: { className?: string }) {
@@ -158,11 +159,32 @@ export function FeatureRail() {
     },
   ];
 
+  const railRef = useRef<HTMLDivElement>(null);
+
+  function handleScroll(direction: "left" | "right") {
+    if (!railRef.current) return;
+    const isRtl = document.documentElement.dir === "rtl";
+    const amount = 300;
+    const sign = direction === "right" ? (isRtl ? -1 : 1) : (isRtl ? 1 : -1);
+    railRef.current.scrollBy({ left: sign * amount, behavior: "smooth" });
+  }
+
+  function handleExplore() {
+    const el = document.getElementById("search");
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth" });
+    }
+    const input = document.getElementById("hero-search-input");
+    if (input) {
+      setTimeout(() => input.focus(), 300);
+    }
+  }
+
   return (
     <section id="features" className="py-12 sm:py-16 overflow-hidden">
       <div className="mx-auto max-w-6xl px-4 sm:px-6">
         <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
-          <div>
+          <div className="text-start">
             <p className="text-xs font-bold uppercase tracking-wider text-brand-orchid">
               Story Frame Highlights
             </p>
@@ -173,17 +195,45 @@ export function FeatureRail() {
               {t("featuresIntro")}
             </p>
           </div>
-          <p className="text-xs font-semibold text-foreground/50 shrink-0 hidden sm:block">
-            Swipe or scroll horizontally →
-          </p>
+
+          {/* Desktop Arrow Controls */}
+          <div className="hidden sm:flex items-center gap-2 shrink-0">
+            <button
+              type="button"
+              onClick={() => handleScroll("left")}
+              aria-label="Previous features"
+              className="flex h-9 w-9 items-center justify-center rounded-full border border-border/80 bg-surface text-foreground/70 transition-all hover:border-brand-orchid hover:text-brand-orchid active:scale-95 cursor-pointer shadow-xs"
+            >
+              <svg className="h-4 w-4 rtl:rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+              </svg>
+            </button>
+            <button
+              type="button"
+              onClick={() => handleScroll("right")}
+              aria-label="Next features"
+              className="flex h-9 w-9 items-center justify-center rounded-full border border-border/80 bg-surface text-foreground/70 transition-all hover:border-brand-orchid hover:text-brand-orchid active:scale-95 cursor-pointer shadow-xs"
+            >
+              <svg className="h-4 w-4 rtl:rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+              </svg>
+            </button>
+          </div>
         </div>
 
         {/* Horizontal Story Rail */}
-        <div className="no-scrollbar mt-8 -mx-4 flex gap-4 overflow-x-auto px-4 pb-4 pt-2 sm:-mx-6 sm:px-6 scroll-smooth snap-x snap-mandatory">
+        <div
+          ref={railRef}
+          tabIndex={0}
+          role="region"
+          aria-label="Features horizontal rail"
+          className="no-scrollbar mt-8 -mx-4 flex gap-4 overflow-x-auto px-4 pb-4 pt-2 sm:-mx-6 sm:px-6 scroll-smooth snap-x snap-mandatory focus:outline-none"
+        >
           {features.map((item, idx) => (
             <div
               key={item.id}
-              className="snap-start group relative flex h-[340px] w-[260px] sm:w-[280px] shrink-0 flex-col justify-between overflow-hidden rounded-3xl border border-border/80 bg-surface p-6 shadow-sm transition-all duration-300 hover:-translate-y-1.5 hover:border-brand-orchid/50 hover:shadow-xl hover:shadow-brand-orchid/10"
+              onClick={handleExplore}
+              className="snap-start group relative flex h-[340px] w-[260px] sm:w-[280px] shrink-0 flex-col justify-between overflow-hidden rounded-3xl border border-border/80 bg-surface p-6 shadow-sm transition-all duration-300 hover:-translate-y-1.5 hover:border-brand-orchid/50 hover:shadow-xl hover:shadow-brand-orchid/10 cursor-pointer text-start"
             >
               {/* Story progress top line */}
               <div className="flex gap-1 mb-2">
@@ -219,7 +269,7 @@ export function FeatureRail() {
                 </p>
                 <div className="mt-4 flex items-center gap-1.5 text-xs font-bold text-brand-orchid">
                   <span>Explore tool</span>
-                  <span className="transition-transform group-hover:translate-x-1">→</span>
+                  <span className="transition-transform group-hover:translate-x-1 rtl:group-hover:-translate-x-1">→</span>
                 </div>
               </div>
             </div>

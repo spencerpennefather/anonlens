@@ -60,14 +60,20 @@ export function HowItWorks() {
           {steps.map((item) => (
             <div
               key={item.step}
-              className="group relative flex flex-col justify-between rounded-3xl border border-border/80 bg-surface p-6 sm:p-7 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-brand-orchid/40 hover:shadow-lg"
+              className="group relative flex flex-col justify-between overflow-hidden rounded-3xl border border-border/80 bg-surface p-6 sm:p-7 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-brand-orchid/40 hover:shadow-xl hover:shadow-brand-orchid/5 text-start"
             >
+              {/* Top accent hairline */}
+              <div
+                aria-hidden="true"
+                className="absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-transparent via-brand-orchid/40 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100"
+              />
+
               <div>
                 <div className="flex items-center justify-between">
-                  <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-surface-muted border border-border/80 text-foreground transition-transform group-hover:scale-105">
+                  <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-surface-muted border border-border/80 text-foreground transition-transform group-hover:scale-105 shadow-xs">
                     {item.icon}
                   </span>
-                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-tr from-brand-violet to-brand-orchid text-xs font-black text-white shadow-sm">
+                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-tr from-brand-violet to-brand-orchid text-xs font-black text-white shadow-md shadow-brand-orchid/20">
                     {item.step}
                   </span>
                 </div>

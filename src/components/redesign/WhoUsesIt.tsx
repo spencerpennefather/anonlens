@@ -53,23 +53,31 @@ export function WhoUsesIt() {
           {personas.map((p) => (
             <div
               key={p.role}
-              className="group flex flex-col justify-between rounded-3xl border border-border/80 bg-surface p-6 sm:p-7 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-brand-orchid/40 hover:shadow-lg"
+              className="group relative flex flex-col justify-between overflow-hidden rounded-3xl border border-border/80 bg-surface p-6 sm:p-7 shadow-sm transition-all duration-300 hover:-translate-y-1.5 hover:border-brand-orchid/40 hover:shadow-xl hover:shadow-brand-orchid/5"
             >
+              {/* Top hairline accent */}
+              <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-brand-violet via-brand-orchid to-brand-ember opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+
               <div>
                 <div className="flex items-center justify-between">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-surface-muted border border-border/80">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-surface-muted border border-border/80 transition-transform duration-300 group-hover:scale-105">
                     {p.icon}
                   </div>
-                  <span className="rounded-full bg-brand-orchid/10 px-2.5 py-0.5 text-[11px] font-bold text-brand-orchid">
+                  <span className="rounded-full bg-brand-orchid/10 px-3 py-1 text-[11px] font-bold text-brand-orchid border border-brand-orchid/20">
                     {p.badge}
                   </span>
                 </div>
                 <h3 className="mt-5 text-lg font-bold tracking-tight text-foreground transition-colors group-hover:text-brand-orchid">
                   {p.role}
                 </h3>
-                <p className="mt-2 text-xs sm:text-sm leading-relaxed text-foreground/65">
+                <p className="mt-2.5 text-xs sm:text-sm leading-relaxed text-foreground/65">
                   {p.desc}
                 </p>
+              </div>
+
+              <div className="mt-6 pt-4 border-t border-border/50 flex items-center justify-between text-[11px] font-semibold text-foreground/50">
+                <span>Verified Use Case</span>
+                <span className="text-emerald-500 font-bold">100% Anonymous ✓</span>
               </div>
             </div>
           ))}

@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Syne, Figtree } from "next/font/google";
+import { Inter } from "next/font/google";
 import Script from "next/script";
 import { getLocale } from "next-intl/server";
 import "./globals.css";
@@ -11,17 +11,10 @@ import {
   TWITTER_HANDLE,
 } from "@/lib/site";
 
-const syne = Syne({
-  variable: "--font-syne",
+const inter = Inter({
+  variable: "--font-inter",
   subsets: ["latin"],
-  weight: ["700", "800"],
-  display: "swap",
-});
-
-const figtree = Figtree({
-  variable: "--font-figtree",
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
+  weight: ["300", "400", "500", "600", "700", "800"],
   display: "swap",
 });
 
@@ -89,7 +82,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
     <html
       lang={htmlLang}
       dir={localeMeta.dir}
-      className={`${syne.variable} ${figtree.variable} h-full antialiased`}
+      className={`${inter.variable} h-full antialiased`}
     >
       <head>
         {process.env.NEXT_PUBLIC_ADSENSE_CLIENT ? (

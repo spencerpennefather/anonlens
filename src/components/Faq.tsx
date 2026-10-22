@@ -51,7 +51,7 @@ export function Faq({
                 onClick={() => setOpenIndex(open ? null : index)}
                 aria-expanded={open}
                 aria-controls={contentId}
-                className="flex w-full items-center justify-between gap-4 p-5 text-left transition-colors"
+                className="flex w-full items-center justify-between gap-4 p-5 text-start transition-colors cursor-pointer"
               >
                 <span className="text-base font-bold text-foreground">
                   {item.question}

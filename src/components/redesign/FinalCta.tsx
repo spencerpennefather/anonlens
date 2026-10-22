@@ -54,10 +54,15 @@ export function FinalCta() {
             <button
               type="button"
               onClick={handleScrollToSearch}
-              className="brand-gradient inline-flex w-full sm:w-auto items-center justify-center gap-2 rounded-full px-8 py-3.5 text-sm font-bold text-white shadow-md shadow-brand-orchid/20 transition-all duration-200 hover:opacity-90 hover:shadow-lg cursor-pointer"
+              className="relative overflow-hidden group brand-gradient inline-flex w-full sm:w-auto items-center justify-center gap-2 rounded-full px-8 py-3.5 text-sm font-bold text-white shadow-md shadow-brand-orchid/25 transition-all duration-300 hover:shadow-xl hover:shadow-brand-orchid/45 hover:-translate-y-0.5 active:translate-y-0 active:scale-95 cursor-pointer"
             >
-              <span>{t("finalCtaButton")}</span>
-              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+              {/* Shimmer light sweep */}
+              <span
+                aria-hidden="true"
+                className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/30 to-transparent transition-transform duration-700 ease-out group-hover:translate-x-full"
+              />
+              <span className="relative z-10">{t("finalCtaButton")}</span>
+              <svg className="relative z-10 h-4 w-4 transition-transform duration-200 group-hover:-translate-y-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M5 10l7-7m0 0l7 7m-7-7v18" />
               </svg>
             </button>

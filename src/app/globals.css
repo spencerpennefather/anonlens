@@ -31,8 +31,8 @@
   --color-brand-mid: var(--brand-mid);
   --color-brand-end: var(--brand-end);
   --color-accent: var(--accent);
-  --font-sans: var(--font-figtree);
-  --font-heading: var(--font-syne);
+  --font-sans: var(--font-inter);
+  --font-heading: var(--font-inter);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -93,12 +93,14 @@ html {
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-figtree), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  letter-spacing: -0.011em;
 }
 
 h1, h2, h3, h4, h5, h6, .font-heading {
-  font-family: var(--font-syne), sans-serif;
-  letter-spacing: -0.02em;
+  font-family: var(--font-inter), sans-serif;
+  letter-spacing: -0.028em;
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
 }
 
 /* Instagram-style Story Progress Bar */
